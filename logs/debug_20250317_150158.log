@@ -1,0 +1,18 @@
+2025-03-17 15:02:08,412 - magical_athlete - ERROR - Exception in race simulations: 'Dicemonger' object has no attribute 'modify_other_roll'
+Traceback (most recent call last):
+  File "/Users/justinvickers/Library/CloudStorage/OneDrive-Personal/Python/MA/magical-athlete-simulator/frontend.py", line 265, in run_simulations_thread
+    average_turns, average_finish_positions, all_play_by_play = run_simulations(
+                                                                ^^^^^^^^^^^^^^^^
+  File "/Users/justinvickers/Library/CloudStorage/OneDrive-Personal/Python/MA/magical-athlete-simulator/game_simulation.py", line 131, in run_simulations
+    turns, final_placements, play_by_play_lines = _run_single_simulation(selected_characters, random_turn_order)
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/justinvickers/Library/CloudStorage/OneDrive-Personal/Python/MA/magical-athlete-simulator/game_simulation.py", line 113, in _run_single_simulation
+    turns, final_placements = game.run(play_by_play_lines)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/justinvickers/Library/CloudStorage/OneDrive-Personal/Python/MA/magical-athlete-simulator/game_simulation.py", line 42, in run
+    player.take_turn(game=self, play_by_play_lines=play_by_play_lines)
+  File "/Users/justinvickers/Library/CloudStorage/OneDrive-Personal/Python/MA/magical-athlete-simulator/characters/alchemist.py", line 25, in take_turn
+    roll = other_player.modify_other_roll(self, game, play_by_play_lines, roll)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Dicemonger' object has no attribute 'modify_other_roll'
+
