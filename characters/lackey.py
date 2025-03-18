@@ -1,0 +1,13 @@
+# lackey.py
+
+from .base_character import Character
+
+class Lackey(Character):
+    def trigger_on_main_move_roll(self, roller, game, roll, play_by_play_lines):
+        """When another racer rolls a 6 for their main move, Lackey moves 2 spaces before they move."""
+        if roller != self and roll == 6 and not self.finished:
+            play_by_play_lines.append(
+                f"{self.name} ({self.piece}) moves 2 because {roller.name} ({roller.piece}) rolled a 6!"
+            )
+            self.move(game, play_by_play_lines, 2)
+            game.trigger_scoocher(play_by_play_lines)
