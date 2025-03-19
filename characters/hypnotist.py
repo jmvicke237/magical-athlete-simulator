@@ -22,4 +22,4 @@ class Hypnotist(Character):
                 f"{self.name} ({self.piece}) hypnotizes {furthest_player.name} ({furthest_player.piece}) and warps them to their space!"
             )
             furthest_player.jump(game, self.position, play_by_play_lines)
-            game.trigger_scoocher(play_by_play_lines)  # Hypnotist triggers Scoocher
+            self.register_ability_use(game, play_by_play_lines, description="Hypnotist")

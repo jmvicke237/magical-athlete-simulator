@@ -17,7 +17,7 @@ class Hare(Character):
             play_by_play_lines.append(
                 f"{self.name} ({self.piece}) gets +2 to their move. Move: {roll} -> {modified_roll}"
             )
-            game.trigger_scoocher(play_by_play_lines)
+            self.register_ability_use(game, play_by_play_lines, description="Hare")
             return modified_roll
         return roll
 

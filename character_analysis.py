@@ -127,11 +127,37 @@ class CharacterAnalyzer:
         ranking.sort(key=lambda x: (-x['win_rate'], x['avg_position']))
         return ranking
     
-    def analyze_character(self, character, num_simulations=50):
-        """Run detailed analysis on a specific character."""
-        # Implementation similar to above but focused on one character
-        # This would support the Character Analysis tab
-        pass
+    def analyze_character(self, character_name, num_simulations=100, players_per_race=4, cache_results=True):
+        # Check if results are cached
+        cache_key = f"{character_name}_{num_simulations}_{players_per_race}"
+        if cache_key in self.results_cache and cache_results:
+            return self.results_cache[cache_key]
+        
+        # Run the simulations with updated function signature
+        average_turns, average_positions, play_by_play, ability_counts = run_simulations(
+            num_simulations, players_per_race, [character_name], random_turn_order=True
+        )
+        
+        # Get ability activation count from the new data
+        ability_triggers = ability_counts.get(character_name, 0)
+        
+        # Rest of the method remains similar...
+        
+        results = {
+            "character": character_name,
+            "average_position": average_positions.get(character_name, None),
+            "win_rate": win_rate,
+            "position_distribution": position_distribution,
+            "move_statistics": move_statistics,
+            "ability_triggers": ability_triggers,
+            "average_race_turns": average_turns
+        }
+        
+        # Cache the results
+        if cache_results:
+            self.results_cache[cache_key] = results
+        
+        return results
         
     def generate_character_report(self, character, num_simulations=50):
         """Generate a human-readable report about a character."""

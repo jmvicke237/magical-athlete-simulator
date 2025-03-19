@@ -20,7 +20,7 @@ class Dicemonger(Character):
             if other_player.name != self.name:
                 self.move(game, play_by_play_lines, 1)
                 play_by_play_lines.append(f"{self.name} (Dicemonger) moves 1 because another player rerolled.") # CORRECTED
-            game.trigger_scoocher(play_by_play_lines) #Scoocher should trigger after
+            self.register_ability_use(game, play_by_play_lines, description="Dicemonger")
             return new_roll
 
         return roll  # Return original roll if no reroll

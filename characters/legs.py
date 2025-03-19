@@ -11,5 +11,5 @@ class Legs(Character):
         roll = 5
         play_by_play_lines.append(f"{self.name} ({self.piece}) effectively rolled a 5 (always moves 5).")
         self.last_roll = roll  # Still store the roll for consistency
-        game.trigger_scoocher(play_by_play_lines)
+        self.register_ability_use(game, play_by_play_lines, description="Legs")
         return roll

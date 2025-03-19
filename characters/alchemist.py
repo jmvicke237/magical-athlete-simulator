@@ -29,7 +29,7 @@ class Alchemist(Character):
                 other_player.trigger_on_main_move_roll(self, game, self.last_roll, play_by_play_lines)
             if roll in (1,2):
                 roll = 4
-                game.trigger_scoocher(play_by_play_lines)
+                self.register_ability_use(game, play_by_play_lines, description="Alchemist")
             if not self.skip_main_move:
                 roll = self.modify_roll(game, play_by_play_lines, roll)
                 self.move(game, play_by_play_lines, roll)

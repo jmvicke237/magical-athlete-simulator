@@ -27,7 +27,7 @@ class PartyAnimal(Character):
         if self.number_of_sharers > 0:
             self.used_ability = True
         if self.used_ability:
-            game.trigger_scoocher(play_by_play_lines)
+            self.register_ability_use(game, play_by_play_lines, description="PartyAnimal")
 
     def modify_other_roll(self, other_player, game, play_by_play_lines, roll):
         """Check the number of people at the party to give a bonus."""

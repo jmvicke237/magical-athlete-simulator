@@ -7,12 +7,21 @@ from board import Board
 class Game:
     def __init__(self, character_names, board=None, random_turn_order=False):
         self.players = []
-        self.board = board or Board(corner_position=CORNER_POSITION)  # Use default corner position
+        self.board = board or Board(corner_position=CORNER_POSITION)
         self.finished_players = []
         self.eliminated_players = []
         self.turn_order = []
         self.current_player_index = 0
-        self._scoocher_recursion_depth = 0
+        
+        # Recursion tracking for different operations
+        self._recursion_depths = {
+            'scoocher': 0,
+            'movement': 0,
+            'ability': 0,
+            'space_check': 0
+        }
+        self._max_recursion_depth = 5  # Set a reasonable limit
+        
         self._create_players(character_names, random_turn_order)
 
     def _create_players(self, character_names, random_turn_order):
@@ -96,22 +105,27 @@ class Game:
     def trigger_scoocher(self, play_by_play_lines):
         # Check if we're already too deep in recursive calls
         max_depth = 3
-        if self._scoocher_recursion_depth >= max_depth:
-            play_by_play_lines.append("(Skipping further Scoocher movement to prevent infinite loop)")
+        if self._recursion_depths['scoocher'] >= max_depth:
+            play_by_play_lines.append("WARNING: Skipping Scoocher movement to prevent infinite loop")
             return
         
         # Increment recursion counter
-        self._scoocher_recursion_depth += 1
+        self._recursion_depths['scoocher'] += 1
         
         try:
             for player in self.players:
-                if player.piece == "Scoocher":
-                    print(f"Scooch from {player.position}")
-                    player.move(self, play_by_play_lines, 1)
-                    play_by_play_lines.append(f"{player.name} (Scoocher) moved 1 space because another player used their ability.")
+                if player.piece == "Scoocher" and not player.finished:
+                    # Make sure we're not in an infinite movement loop
+                    if self._recursion_depths['movement'] <= 2:
+                        player.move(self, play_by_play_lines, 1)
+                        player.ability_activations += 1
+                        play_by_play_lines.append(f"{player.name} ({player.piece}) used ability: Scoocher")
+                        play_by_play_lines.append(f"{player.name} (Scoocher) moved 1 space because another player used their ability.")
+                    else:
+                        play_by_play_lines.append(f"WARNING: Movement limit reached for {player.name} (Scoocher). Skipping to prevent recursion.")
         finally:
             # Decrement recursion counter
-            self._scoocher_recursion_depth -= 1
+            self._recursion_depths['scoocher'] -= 1
 
     def change_turn_order(self, skipper, play_by_play_lines):
         skipper_index = self.players.index(skipper)
@@ -133,42 +147,68 @@ def run_simulations(num_simulations, num_players, fixed_characters=None, random_
     # Redirect print output to capture debug statements
     import io
     import sys
+    import traceback
     original_stdout = sys.stdout
     sys.stdout = io.StringIO()
     
     try:
         all_turns = []
         finish_positions = {char: [] for char in character_abilities.keys()}
+        ability_activations = {char: [] for char in character_abilities.keys()}
         all_play_by_play = []
-        complete_logs = []  # Full logs for each simulation
         
         for i in range(num_simulations):
-            selected_characters = fixed_characters if fixed_characters else random.sample(list(character_abilities.keys()), num_players)
-            
-            # Create a dedicated log for this simulation
-            sim_log = [f"--- Simulation {i+1} ---"]
-            
-            turns, final_placements, play_by_play_lines = _run_single_simulation(selected_characters, random_turn_order)
-            all_turns.append(turns)
-            
-            # Add to both the UI display log (truncated) and complete logs (full)
-            all_play_by_play.extend([f"--- Simulation {i+1} ---"] + play_by_play_lines[:50])  # Truncated for UI
-            sim_log.extend(play_by_play_lines)  # Complete log
-            
-            # Add placements to the log
-            sim_log.append("\nFinal Placements:")
-            for place, player in final_placements:
-                sim_log.append(f"{place}: {player.name} ({player.piece})")
-            
-            complete_logs.append("\n".join(sim_log))
-            
-            for place, player in final_placements:
-                finish_positions[player.piece].append(int(place[:-2]))
+            try:
+                selected_characters = fixed_characters if fixed_characters else random.sample(list(character_abilities.keys()), num_players)
+                game = Game(selected_characters, random_turn_order=random_turn_order)
+                play_by_play_lines = []
+                turns, final_placements = game.run(play_by_play_lines)
                 
-        average_turns = sum(all_turns) / num_simulations if all_turns else 0
-        average_finish_positions = {char: (sum(positions) / len(positions)) if positions else None for char, positions in finish_positions.items()}
+                # Get ability statistics
+                try:
+                    char_ability_stats = game.get_ability_statistics()
+                    for char, count in char_ability_stats.items():
+                        if char in ability_activations:
+                            ability_activations[char].append(count)
+                except AttributeError:
+                    # Method doesn't exist yet, skip ability stats for now
+                    pass
+                
+                all_turns.append(turns)
+                all_play_by_play.extend([f"--- Simulation {i+1} ---"] + play_by_play_lines)
+                
+                for place, player in final_placements:
+                    finish_positions[player.piece].append(int(place[:-2]))
+            except RecursionError as re:
+                # Special handling for recursion errors to identify problematic characters
+                msg = f"Recursion error in simulation {i+1} with characters: {selected_characters}"
+                print(msg)
+                traceback.print_exc()
+                all_play_by_play.extend([f"--- Simulation {i+1} FAILED ---", msg])
+                # Skip this simulation but continue with others
+                continue
+            except Exception as e:
+                # Log other errors but continue with remaining simulations
+                msg = f"Error in simulation {i+1}: {str(e)}"
+                print(msg)
+                traceback.print_exc()
+                all_play_by_play.extend([f"--- Simulation {i+1} FAILED ---", msg])
+                # Skip this simulation but continue with others
+                continue
         
-        return average_turns, average_finish_positions, all_play_by_play, complete_logs
+        if not all_turns:
+            raise ValueError("All simulations failed! Check the logs for details.")
+            
+        average_turns = sum(all_turns) / len(all_turns) if all_turns else 0
+        average_finish_positions = {char: (sum(positions) / len(positions)) if positions else None for char, positions in finish_positions.items()}
+        average_ability_activations = {char: (sum(counts) / len(counts)) if counts else 0 for char, counts in ability_activations.items()}
+        
+        return average_turns, average_finish_positions, all_play_by_play, average_ability_activations
+    except Exception as e:
+        # Catch any other errors and provide detailed information
+        error_msg = f"Error in run_simulations: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        return 0, {}, ["SIMULATION ERROR: " + error_msg], {}
     finally:
         # Restore stdout
         sys.stdout = original_stdout
@@ -187,3 +227,7 @@ def write_play_by_play_to_file(filename, play_by_play_lines):
     with open(filename, 'w') as file:
         for line in play_by_play_lines:
             file.write(line + '\n')
+            
+def get_ability_statistics(self):
+    """Returns a dictionary with ability activation counts for each character."""
+    return {player.piece: getattr(player, 'ability_activations', 0) for player in self.players}

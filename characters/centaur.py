@@ -19,7 +19,7 @@ class Centaur(Character):
             if self.position > player.position and not player.finished:  # Now behind
                 play_by_play_lines.append(f"{self.name} ({self.piece}) passed {player.name} ({player.piece}), moving them back 2 spaces.")
                 player.move(game, play_by_play_lines, -2)
-                game.trigger_scoocher(play_by_play_lines)
+                self.register_ability_use(game, play_by_play_lines, description="Centaur")
 
     def _get_racers_in_front(self, game):
         """Helper function to get a list of players ahead of the Centaur."""

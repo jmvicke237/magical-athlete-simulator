@@ -29,4 +29,4 @@ class BabaYaga(Character):
                         play_by_play_lines.append(
                             f"{self.name} ({self.piece}) tripped {other_player.name} ({other_player.piece})!"
                         )
-                        game.trigger_scoocher(play_by_play_lines)
+                        self.register_ability_use(game, play_by_play_lines, description="BabaYaga")

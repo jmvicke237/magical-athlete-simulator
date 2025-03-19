@@ -17,4 +17,4 @@ class MOUTH(Character): #I fixed the class to be correct.
         if len(space_mates) == 1:
             eliminated_player = space_mates[0]
             game.eliminate_player(eliminated_player, play_by_play_lines)
-            game.trigger_scoocher(play_by_play_lines)
+            self.register_ability_use(game, play_by_play_lines, description="MOUTH")

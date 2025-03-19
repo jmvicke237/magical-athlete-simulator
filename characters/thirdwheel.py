@@ -24,4 +24,4 @@ class ThirdWheel(Character):
             old_space = self.position
             play_by_play_lines.append(f"{self.name} ({self.piece}) Warps to space {target_space} with exactly 2 racers on it from {old_space}")
             self.jump(game, target_space, play_by_play_lines)
-            game.trigger_scoocher(play_by_play_lines)
+            self.register_ability_use(game, play_by_play_lines, description="ThirdWheel")

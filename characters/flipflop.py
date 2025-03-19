@@ -35,7 +35,7 @@ class FlipFlop(Character):
             )
 
             self.skip_main_move = True
-            game.trigger_scoocher(play_by_play_lines)  # FlipFlop triggers scoocher ability
+            self.register_ability_use(game, play_by_play_lines, description="FlipFlop")
         else:
             # Set the flag to False if no swap occurs, meaning the FlipFlop should roll normally
             self.skip_main_move = False

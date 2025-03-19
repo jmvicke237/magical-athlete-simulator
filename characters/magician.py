@@ -21,6 +21,6 @@ class Magician(Character):
             if roller == self and roll <= 3 or (spaces_to_finish <= 6 and roll < spaces_to_finish) or (self.position + roll == mouth_position): #should only reroll in those cases.
                 play_by_play_lines.append(f"{self.name} ({self.piece}) chooses to reroll")
                 roll = self.main_roll(game, play_by_play_lines) #Make a new roll and trigger new events
-                game.trigger_scoocher(play_by_play_lines) #Scoocher should trigger after
+                self.register_ability_use(game, play_by_play_lines, description="Magician")
             #Reset that counter
         return roll #The result of the function returns

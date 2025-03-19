@@ -116,12 +116,23 @@ class MagicalAthleteApp:
         # Results display
         self.race_results_text = scrolledtext.ScrolledText(right_frame, width=60, height=30)
         self.race_results_text.pack(padx=5, pady=5, fill="both", expand=True)
+        
+        # Add export button frame
         export_frame = ttk.Frame(right_frame)
         export_frame.pack(fill="x", padx=5, pady=5)
-
-        ttk.Button(export_frame, text="Export Play-by-Play Log", 
-                command=self._export_play_by_play_log).pack(side="right", padx=5)
-                
+        
+        # Initialize the export button (disabled until we have data)
+        self.export_button = ttk.Button(
+            export_frame, 
+            text="Export Play-by-Play Log", 
+            command=self._export_play_by_play_log,
+            state=tk.DISABLED  # Start disabled
+        )
+        self.export_button.pack(side="right", padx=5)
+        
+        # Initialize the complete simulation logs attribute
+        self.complete_simulation_logs = []
+        
         # Configure grid weights
         self.single_race_tab.columnconfigure(0, weight=1)
         self.single_race_tab.columnconfigure(1, weight=3)
@@ -152,16 +163,52 @@ class MagicalAthleteApp:
             return
         
         try:
-            # Combine all logs with separators
-            full_log = "\n\n" + "="*80 + "\n\n".join(self.complete_simulation_logs) + "\n\n" + "="*80 + "\n\n"
+            # Build a formatted log with clear separation between simulations
+            full_log = []
+            current_sim = []
+            sim_number = 0
+            
+            for line in self.complete_simulation_logs:
+                if line.startswith("--- Simulation"):
+                    # Start of new simulation
+                    if current_sim:
+                        # Add the previous simulation with header
+                        full_log.append(f"\n{'='*80}\n")
+                        full_log.append(f"SIMULATION {sim_number}\n")
+                        full_log.append(f"{'='*80}\n\n")
+                        full_log.extend(current_sim)
+                    
+                    # Extract simulation number
+                    try:
+                        sim_number = int(line.split("---")[1].strip().split(" ")[1])
+                    except (IndexError, ValueError):
+                        sim_number += 1
+                    
+                    # Reset for new simulation
+                    current_sim = []
+                else:
+                    # Add line to current simulation
+                    current_sim.append(line)
+            
+            # Add the last simulation if there is one
+            if current_sim:
+                full_log.append(f"\n{'='*80}\n")
+                full_log.append(f"SIMULATION {sim_number}\n")
+                full_log.append(f"{'='*80}\n\n")
+                full_log.extend(current_sim)
             
             # Add a header
-            num_sims = len(self.complete_simulation_logs)
-            header = f"COMPLETE PLAY-BY-PLAY LOGS\n{num_sims} Race Simulations\nExported on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+            num_sims = len([l for l in self.complete_simulation_logs if l.startswith("--- Simulation")])
+            header = [
+                "COMPLETE PLAY-BY-PLAY LOGS\n",
+                f"{num_sims} Race Simulations\n",
+                f"Exported on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+            ]
             
             # Write content to file
             with open(file_path, 'w') as f:
-                f.write(header + full_log)
+                f.write("".join(header))
+                f.write("\n".join(full_log))
             
             messagebox.showinfo("Export Log", 
                             f"Complete play-by-play logs successfully exported to:\n{file_path}")
@@ -261,9 +308,10 @@ class MagicalAthleteApp:
                 error_details = log_exception(error, "tournament simulation")
                 error_msg = str(error)
                 
-                # Show detailed error message
+                # Show detailed error message - FIXED LAMBDA
+                # Pass both variables as default arguments to the lambda function
                 self.root.after(0, lambda error_msg=error_msg, details=error_details: 
-                               self._show_detailed_error(error_msg, "tournament simulation", details))
+                            self._show_detailed_error(error_msg, "tournament simulation", details))
         
         threading.Thread(target=run_tournament_thread).start()
     
@@ -313,31 +361,32 @@ class MagicalAthleteApp:
         self.root.update()
         
         # Run simulations in a separate thread
+        # Fix for the lambda function error in run_simulations_thread method
+
         def run_simulations_thread():
             try:
-                average_turns, average_finish_positions, all_play_by_play, complete_logs = run_simulations(
+                # Updated to handle the additional ability_activations return value
+                average_turns, average_finish_positions, all_play_by_play, ability_activations = run_simulations(
                     num_simulations, num_racers, fixed_characters, random_turn_order=True
                 )
                 
-                # Store complete logs in the instance
-                self.complete_simulation_logs = complete_logs
-                
-                # Display results
+                # Display results with ability data included
                 self.root.after(0, lambda: self._display_race_results(
-                    average_turns, average_finish_positions, all_play_by_play
+                    average_turns, average_finish_positions, all_play_by_play, ability_activations
                 ))
-            except Exception as error:
-                # Log the full exception
-                error_details = log_exception(error, "race simulations")
-                error_msg = str(error)
-                
-                # Show detailed error message in a scrollable dialog
-                self.root.after(0, lambda error_msg=error_msg, details=error_details: 
-                            self._show_detailed_error(error_msg, "race simulations", details))
-        
+            except Exception as e:
+                # Fix: Capture the exception message before using it in the lambda
+                error_msg = str(e)
+                self.root.after(0, lambda error_msg=error_msg: messagebox.showerror("Error", f"An error occurred: {error_msg}"))
+
         threading.Thread(target=run_simulations_thread).start()
     
-    def _display_race_results(self, average_turns, average_finish_positions, all_play_by_play):
+    def _display_race_results(self, average_turns, average_finish_positions, all_play_by_play, ability_activations=None):
+        """Display race simulation results and store logs for export."""
+        # Store the complete logs for later export
+        self.complete_simulation_logs = all_play_by_play.copy() if all_play_by_play else []
+        
+        # Clear the results display
         self.race_results_text.delete(1.0, tk.END)
         
         # Display summary
@@ -356,17 +405,36 @@ class MagicalAthleteApp:
         for char, avg_pos in sorted_chars:
             self.race_results_text.insert(tk.END, f"{char}: {avg_pos:.2f}\n")
         
+        # Display ability statistics if available
+        if ability_activations:
+            self.race_results_text.insert(tk.END, "\nAbility Activation Statistics:\n")
+            
+            # Only show characters that were in the race
+            race_characters = [char for char, pos in average_finish_positions.items() if pos is not None]
+            for char in race_characters:
+                if char in ability_activations:
+                    avg_activations = ability_activations[char]
+                    self.race_results_text.insert(tk.END, f"{char}: {avg_activations:.2f} ability uses per race\n")
+        
         # Display sample play-by-play
         self.race_results_text.insert(tk.END, "\nSample Play-by-Play (first simulation):\n")
         
-        start_idx = all_play_by_play.index("--- Simulation 1 ---") + 1
-        end_idx = start_idx + 50  # Show a reasonable number of lines
+        # Check if we have simulation logs
+        if all_play_by_play and "--- Simulation 1 ---" in all_play_by_play:
+            start_idx = all_play_by_play.index("--- Simulation 1 ---") + 1
+            end_idx = start_idx + 50  # Show a reasonable number of lines
+            
+            for i in range(start_idx, min(end_idx, len(all_play_by_play))):
+                self.race_results_text.insert(tk.END, f"{all_play_by_play[i]}\n")
+            
+            if len(all_play_by_play) > end_idx:
+                self.race_results_text.insert(tk.END, "...\n")
+        else:
+            self.race_results_text.insert(tk.END, "No play-by-play logs available.\n")
         
-        for i in range(start_idx, min(end_idx, len(all_play_by_play))):
-            self.race_results_text.insert(tk.END, f"{all_play_by_play[i]}\n")
-        
-        if len(all_play_by_play) > end_idx:
-            self.race_results_text.insert(tk.END, "...\n")
+        # Update the export button state to show logs are available
+        if hasattr(self, 'export_button') and self.export_button:
+            self.export_button.config(state=tk.NORMAL)
     
     def _generate_character_stats(self):
         """Generate comprehensive character statistics."""

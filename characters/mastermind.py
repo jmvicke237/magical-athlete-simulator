@@ -18,7 +18,7 @@ class Mastermind(Character):
                 f"{self.name} ({self.piece}) predicts that {self.prediction.name} ({self.prediction.piece}) will win!"
             )
             self.has_made_prediction = True
-            game.trigger_scoocher(play_by_play_lines)
+            self.register_ability_use(game, play_by_play_lines, description="Mastermind")
 
     def check_prediction(self, game, play_by_play_lines):
         """Checks if the prediction is correct when the game ends."""

@@ -16,6 +16,6 @@ class Coach(Character):
             play_by_play_lines.append(
                 f"{other_player.name} ({other_player.piece}) gets +1 to their roll from {self.name} ({self.piece}). Roll: {roll} -> {modified_roll}"
             )
-            game.trigger_scoocher(play_by_play_lines)
+            self.register_ability_use(game, play_by_play_lines, description="Coach")
             return modified_roll
         return roll

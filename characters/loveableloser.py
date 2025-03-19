@@ -14,7 +14,7 @@ class LoveableLoser(Character):
             play_by_play_lines.append(
                 f"{self.name} ({self.piece}) is in last place and receives a bronze chip!"
             )
-            game.trigger_scoocher(play_by_play_lines)
+            self.register_ability_use(game, play_by_play_lines, description="LoveableLoser")
 
     def is_last_place(self, game):
         """Checks if the Loveable Loser is in last place (strictly behind all other racers)."""

@@ -8,5 +8,5 @@ class Inchworm(Character):
         if roller != self and roll == 1 and not self.finished:
             play_by_play_lines.append(f"{self.name} ({self.piece}) moves 1 space because {roller.name} ({roller.piece}) rolled a 1.")
             self.move(game, play_by_play_lines, 1)
-            game.trigger_scoocher(play_by_play_lines)
+            self.register_ability_use(game, play_by_play_lines, description="Inchworm")
             roller.skip_main_move = True

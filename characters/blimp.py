@@ -20,6 +20,6 @@ class Blimp(Character):
             if hasattr(other_player, "modify_other_roll"):
                 modified_roll = other_player.modify_other_roll(self, game, play_by_play_lines, modified_roll)
         
-        game.trigger_scoocher(play_by_play_lines)
+        self.register_ability_use(game, play_by_play_lines, description="Blimp")
 
         return modified_roll
