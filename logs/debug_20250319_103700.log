@@ -1,0 +1,10 @@
+2025-03-19 10:37:27,986 - magical_athlete - ERROR - Exception in race simulations: 'Game' object has no attribute 'get_ability_statistics'
+Traceback (most recent call last):
+  File "/Users/justinvickers/Library/CloudStorage/OneDrive-Personal/Python/MA/magical-athlete-simulator/frontend.py", line 318, in run_simulations_thread
+    average_turns, average_finish_positions, all_play_by_play, complete_logs = run_simulations(
+                                                                               ^^^^^^^^^^^^^^^^
+  File "/Users/justinvickers/Library/CloudStorage/OneDrive-Personal/Python/MA/magical-athlete-simulator/game_simulation.py", line 154, in run_simulations
+    char_ability_stats = game.get_ability_statistics()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Game' object has no attribute 'get_ability_statistics'
+

@@ -27,6 +27,5 @@ class HugeBaby(Character):
                  if other_player != self and other_player.position == self.position:
                     other_player.move(game, play_by_play_lines, -1)
                     play_by_play_lines.append(f"{other_player.name} ({other_player.piece}) was pushed back by {self.name} ({self.piece})!")
-                    # Don't trigger Scoocher if the pushed player is Scoocher
                     if other_player.piece != "Scoocher":
-                        game.trigger_scoocher(play_by_play_lines)
+                        self.register_ability_use(game, play_by_play_lines, description="Hugebaby")

@@ -11,4 +11,4 @@ class Heckler(Character):
                 f"{self.name} ({self.piece}) moves 2 because {other_player.name} ({other_player.piece}) ended their turn close to where they started!"
             )
             self.move(game, play_by_play_lines, 2)
-            game.trigger_scoocher(play_by_play_lines) #Trigger scoocher
+            self.register_ability_use(game, play_by_play_lines, description="Heckler")

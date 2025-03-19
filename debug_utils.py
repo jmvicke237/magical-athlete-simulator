@@ -34,3 +34,34 @@ def get_full_error_message(e, context=""):
     """Get a detailed error message including the traceback."""
     tb_str = traceback.format_exc()
     return f"Error in {context}:\n{str(e)}\n\nTraceback:\n{tb_str}"
+
+def track_recursion_depth(func):
+    """Decorator to track recursion depth of a function."""
+    import sys
+    import functools
+    
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        # Get current recursion depth
+        frame = sys._getframe()
+        depth = 0
+        func_name = func.__name__
+        
+        # Count how many times this function appears in the call stack
+        while frame:
+            if frame.f_code.co_name == func_name:
+                depth += 1
+            frame = frame.f_back
+        
+        # Log if depth is getting high
+        if depth > 10:
+            logger.warning(f"High recursion depth ({depth}) detected in {func_name}")
+            
+        if depth > 20:
+            logger.error(f"Excessive recursion depth ({depth}) detected in {func_name}! This may cause a crash.")
+            # Optionally raise an exception here instead of continuing
+            # raise RecursionError(f"Maximum safe recursion depth exceeded in {func_name}")
+            
+        return func(*args, **kwargs)
+    
+    return wrapper

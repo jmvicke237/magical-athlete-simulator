@@ -13,6 +13,7 @@ class Character:
         self.turn_start_position = 0
         self.last_roll = -1
         self.skip_main_move = False
+        self.ability_activations = 0
 
     def take_turn(self, game, play_by_play_lines):
         self.turn_start_position = self.position
@@ -59,28 +60,42 @@ class Character:
                 roll = other_player.modify_other_roll(self, game, play_by_play_lines, roll)
         return roll
     
-    def move(self, game, play_by_play_lines, spaces): # IF CHANGED ALSO CHANGE LEAPTOAD
-        if self.finished:
+    def move(self, game, play_by_play_lines, spaces):
+        """Move a character, with recursion depth tracking."""
+        # Guard against excessive recursion
+        if game._recursion_depths['movement'] >= game._max_recursion_depth:
+            play_by_play_lines.append(f"WARNING: Maximum movement recursion depth ({game._max_recursion_depth}) reached for {self.name} ({self.piece})! Stopping recursion.")
             return
-
-        self.previous_position = self.position
-        self.position = min(self.position + spaces, game.board.length)
-
-        if self.position >= game.board.length:
-            self.position = game.board.length
-            game.finish_player(self, play_by_play_lines)
-            play_by_play_lines.append(f"{self.name} ({self.piece}) moved from {self.previous_position} to {self.position} and finished!")
-        else:
-            play_by_play_lines.append(f"{self.name} ({self.piece}) moved from {self.previous_position} to {self.position}")
-
-        # Move Suckerfish before checking for on another_player_move to avoid conflicts with Romantic etc
-        for p in game.players:
-            if p.piece == "Suckerfish":
-                p.move_with_another(self, spaces, game, play_by_play_lines)
         
-        for other_player in game.players:
-            if other_player != self:
-                other_player.on_another_player_move(self, game, play_by_play_lines)
+        # Increment recursion counter
+        game._recursion_depths['movement'] += 1
+        
+        try:
+            if self.finished:
+                return
+
+            self.previous_position = self.position
+            self.position = min(self.position + spaces, game.board.length)
+
+            if self.position >= game.board.length:
+                self.position = game.board.length
+                game.finish_player(self, play_by_play_lines)
+                play_by_play_lines.append(f"{self.name} ({self.piece}) moved from {self.previous_position} to {self.position} and finished!")
+            else:
+                play_by_play_lines.append(f"{self.name} ({self.piece}) moved from {self.previous_position} to {self.position}")
+
+            # Move Suckerfish before checking for on another_player_move to avoid conflicts
+            for p in game.players:
+                if p.piece == "Suckerfish" and p != self:
+                    p.move_with_another(self, spaces, game, play_by_play_lines)
+            
+            # Notify other players about the movement
+            for other_player in game.players:
+                if other_player != self:
+                    other_player.on_another_player_move(self, game, play_by_play_lines)
+        finally:
+            # Decrement recursion counter
+            game._recursion_depths['movement'] -= 1
 
     def post_move_ability(self, game, play_by_play_lines):
         pass
@@ -95,19 +110,33 @@ class Character:
         self.tripped = True
 
     def jump(self, game, position, play_by_play_lines):
-        self.previous_position = self.position
-        self.position = position
+        """Jump/warp a character to a position, with recursion depth tracking."""
+        # Guard against excessive recursion
+        if game._recursion_depths['movement'] >= game._max_recursion_depth:
+            play_by_play_lines.append(f"WARNING: Maximum jump recursion depth ({game._max_recursion_depth}) reached for {self.name} ({self.piece})! Stopping recursion.")
+            return
+        
+        # Increment recursion counter
+        game._recursion_depths['movement'] += 1
+        
+        try:
+            self.previous_position = self.position
+            self.position = position
 
-        if self.position >= game.board.length:
-            self.position = game.board.length
-            game.finish_player(self, play_by_play_lines)
-            play_by_play_lines.append(f"{self.name} ({self.piece}) jumped from {self.previous_position} to {self.position} and finished!")
-        else:
-            play_by_play_lines.append(f"{self.name} ({self.piece}) jumped from {self.previous_position} to {self.position}")
+            if self.position >= game.board.length:
+                self.position = game.board.length
+                game.finish_player(self, play_by_play_lines)
+                play_by_play_lines.append(f"{self.name} ({self.piece}) jumped from {self.previous_position} to {self.position} and finished!")
+            else:
+                play_by_play_lines.append(f"{self.name} ({self.piece}) jumped from {self.previous_position} to {self.position}")
 
-        for other_player in game.players:
-            if other_player != self:
-                other_player.on_another_player_jump(self, game, play_by_play_lines)
+            # Notify other players about the jump
+            for other_player in game.players:
+                if other_player != self:
+                    other_player.on_another_player_jump(self, game, play_by_play_lines)
+        finally:
+            # Decrement recursion counter
+            game._recursion_depths['movement'] -= 1
 
     def check_for_share_space(self, game):
         space_mates = []
@@ -122,3 +151,26 @@ class Character:
     def trigger_on_main_move_roll(self, roller, game, roll, play_by_play_lines):
         """Called immediately after a player's main roll, before modifications."""
         pass
+    
+    def register_ability_use(self, game, play_by_play_lines, description=None):
+        """Records that an ability was used by this character, with recursion depth tracking."""
+        # Guard against excessive recursion
+        if game._recursion_depths['ability'] >= game._max_recursion_depth:
+            play_by_play_lines.append(f"WARNING: Maximum ability recursion depth ({game._max_recursion_depth}) reached for {self.name} ({self.piece})! Stopping recursion.")
+            return
+        
+        # Increment recursion counter
+        game._recursion_depths['ability'] += 1
+        
+        try:
+            self.ability_activations += 1
+            
+            # Optional: Add detailed tracking message to play-by-play
+            if description:
+                play_by_play_lines.append(f"{self.name} ({self.piece}) used ability: {description}")
+            
+            # Trigger Scoocher movement
+            game.trigger_scoocher(play_by_play_lines)
+        finally:
+            # Decrement recursion counter
+            game._recursion_depths['ability'] -= 1

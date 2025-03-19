@@ -15,4 +15,4 @@ class Banana(Character):
                         f"{moved_player.name} ({moved_player.piece}) tripped because they passed {self.name} ({self.piece})!"
                     )
                     self.move(game, play_by_play_lines, -1)
-                    game.trigger_scoocher(play_by_play_lines)
+                    self.register_ability_use(game, play_by_play_lines, description="Banana")

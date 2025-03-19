@@ -23,4 +23,4 @@ class Boogeyman(Character):
                         play_by_play_lines.append(f"{self.name} ({self.piece}) uses their ability to jump behind the leader!")
                         self.jump(game, target_position, play_by_play_lines)
                         self.has_used_ability = True
-                        game.trigger_scoocher(play_by_play_lines)
+                        self.register_ability_use(game, play_by_play_lines, description="Boogeyman")

@@ -28,8 +28,8 @@ class Duelist(Character):
         if my_roll >= other_roll:
             play_by_play_lines.append(f"{self.name} ({self.piece}) wins the duel!")
             self.move(game, play_by_play_lines, 2)
-            game.trigger_scoocher(play_by_play_lines)
+            self.register_ability_use(game, play_by_play_lines, description="Duelist")
         else:
             play_by_play_lines.append(f"{other_player.name} ({other_player.piece}) wins the duel!")
             other_player.move(game, play_by_play_lines, 2)
-            game.trigger_scoocher(play_by_play_lines)
+            self.register_ability_use(game, play_by_play_lines, description="Duelist")

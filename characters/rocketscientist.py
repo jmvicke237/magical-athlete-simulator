@@ -15,6 +15,6 @@ class RocketScientist(Character):
             play_by_play_lines.append(
                 f"{self.name} ({self.piece}) doubles their roll to {doubled_roll}, but is now tripped!"
             )
-            game.trigger_scoocher(play_by_play_lines)
+            self.register_ability_use(game, play_by_play_lines, description="RocketScientist")
             return doubled_roll
         return roll

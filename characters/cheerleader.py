@@ -23,4 +23,4 @@ class Cheerleader(Character):
         if len(last_place_players) > 0: #Simplified check.
             self.move(game, play_by_play_lines, 1)
             play_by_play_lines.append(f"{self.name} ({self.piece}) moved forward 1 (Cheerleader ability).")
-            game.trigger_scoocher(play_by_play_lines)
+            self.register_ability_use(game, play_by_play_lines, description="Cheerleader")

@@ -10,4 +10,4 @@ class Lackey(Character):
                 f"{self.name} ({self.piece}) moves 2 because {roller.name} ({roller.piece}) rolled a 6!"
             )
             self.move(game, play_by_play_lines, 2)
-            game.trigger_scoocher(play_by_play_lines)
+            self.register_ability_use(game, play_by_play_lines, description="Lackey")

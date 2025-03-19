@@ -10,6 +10,6 @@ class Gunk(Character):
             play_by_play_lines.append(
                 f"{other_player.name} ({other_player.piece})'s roll was reduced by 1 due to {self.name} ({self.piece}). Roll: {roll} -> {modified_roll}"
             )
-            game.trigger_scoocher(play_by_play_lines)
+            self.register_ability_use(game, play_by_play_lines, description="Gunk")
             return modified_roll
         return roll

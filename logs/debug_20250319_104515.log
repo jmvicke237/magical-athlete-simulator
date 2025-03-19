@@ -1,0 +1,10 @@
+2025-03-19 10:46:49,696 - magical_athlete - ERROR - Exception in character analysis: 'CharacterAnalyzer' object has no attribute 'results_cache'
+Traceback (most recent call last):
+  File "/Users/justinvickers/Library/CloudStorage/OneDrive-Personal/Python/MA/magical-athlete-simulator/frontend.py", line 590, in analysis_thread
+    results = self.character_analyzer.analyze_character(character, num_simulations)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/justinvickers/Library/CloudStorage/OneDrive-Personal/Python/MA/magical-athlete-simulator/character_analysis.py", line 133, in analyze_character
+    if cache_key in self.results_cache and cache_results:
+                    ^^^^^^^^^^^^^^^^^^
+AttributeError: 'CharacterAnalyzer' object has no attribute 'results_cache'
+

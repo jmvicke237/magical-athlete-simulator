@@ -33,8 +33,6 @@ class Leaptoad(Character):
                 continue  # Skip this space
         #Leap to 
         self.position = new_position
-        if skipped_spaces:
-            game.trigger_scoocher(play_by_play_lines)
 
         if self.position >= game.board.length:
             game.finish_player(self, play_by_play_lines)
@@ -46,7 +44,7 @@ class Leaptoad(Character):
                 f"{self.name} ({self.piece}) moved from {original_position} to {self.position}"
             )
           
-        # Move Suckerfish before checking for on another_player_move to avoid conflicts with Romantic etc
+        # Move Suckerfish before checking for another_player_move to avoid conflicts with Romantic etc
         for p in game.players:
             if p.piece == "Suckerfish":
                 p.move_with_another(self, spaces, game, play_by_play_lines)
@@ -54,3 +52,6 @@ class Leaptoad(Character):
         for other_player in game.players:
             if other_player != self:
                 other_player.on_another_player_move(self, game, play_by_play_lines)
+        
+        if skipped_spaces:
+            self.register_ability_use(game, play_by_play_lines, description="Leaptoad")
