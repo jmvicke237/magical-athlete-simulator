@@ -17,7 +17,7 @@ class CharacterAnalyzer:
         self.global_stats = {}
     
     def analyze_all_characters(self, num_simulations=100, racer_counts=[3, 4, 5, 6]):
-        """Run comprehensive analysis on all characters with various racer counts."""
+        """Run comprehensive analysis on all characters with fixed ability tracking."""
         self.reset_stats()
         all_characters = list(character_abilities.keys())
         
@@ -51,23 +51,6 @@ class CharacterAnalyzer:
                 selected_chars = random.sample(all_characters, racer_count)
                 game = Game(selected_chars, random_turn_order=True)
                 
-                # Set up monitoring for ability triggers
-                game._ability_trigger_count = defaultdict(int)
-                
-                # Modified trigger_scoocher to track ability usage
-                original_trigger_fn = game.trigger_scoocher
-                
-                def tracked_trigger(play_by_play_lines):
-                    # Get the character that triggered the ability
-                    # This is a bit tricky since we need stack info, but as a proxy:
-                    for player in game.players:
-                        if player.piece != "Scoocher":
-                            game._ability_trigger_count[player.piece] += 1
-                    return original_trigger_fn(play_by_play_lines)
-                
-                # Replace the function with our tracked version
-                game.trigger_scoocher = tracked_trigger
-                
                 # Run the simulation
                 play_by_play_lines = []
                 turns, final_placements = game.run(play_by_play_lines)
@@ -76,6 +59,13 @@ class CharacterAnalyzer:
                 self.global_stats['total_simulations'] += 1
                 self.global_stats['racer_counts'][racer_count] += 1
                 self.global_stats['total_turns'] += turns
+                
+                # Get ability counts (safely)
+                ability_counts = {}
+                try:
+                    ability_counts = game.get_ability_statistics()
+                except (AttributeError, Exception) as e:
+                    print(f"Error getting ability statistics: {e}")
                 
                 # Update character stats
                 for place, player in final_placements:
@@ -89,9 +79,10 @@ class CharacterAnalyzer:
                     if position == 1:
                         self.character_stats[char]['win_count'] += 1
                     
-                    # Record ability triggers
-                    trigger_count = game._ability_trigger_count.get(char, 0)
-                    self.character_stats[char]['ability_triggers'].append(trigger_count)
+                    # Record ability triggers if available
+                    if char in ability_counts:
+                        trigger_count = ability_counts[char]
+                        self.character_stats[char]['ability_triggers'].append(trigger_count)
         
         # Calculate averages
         self.global_stats['average_turns'] = self.global_stats['total_turns'] / self.global_stats['total_simulations']
@@ -100,7 +91,7 @@ class CharacterAnalyzer:
         return self.get_character_ranking()
     
     def get_character_ranking(self):
-        """Get an ordered list of characters by performance."""
+        """Get an ordered list of characters by performance with proper ability calculations."""
         ranking = []
         
         for char, stats in self.character_stats.items():
@@ -108,7 +99,11 @@ class CharacterAnalyzer:
                 win_rate = (stats['win_count'] / stats['appearances']) * 100
                 avg_position = sum(stats['positions']) / len(stats['positions']) if stats['positions'] else float('inf')
                 median_position = np.median(stats['positions']) if stats['positions'] else float('inf')
-                avg_ability_triggers = sum(stats['ability_triggers']) / len(stats['ability_triggers']) if stats['ability_triggers'] else 0
+                
+                # Calculate average ability triggers correctly
+                avg_ability_triggers = 0
+                if stats['ability_triggers']:
+                    avg_ability_triggers = sum(stats['ability_triggers']) / len(stats['ability_triggers'])
                 
                 ranking.append({
                     'character': char,

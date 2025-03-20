@@ -382,7 +382,7 @@ class MagicalAthleteApp:
         threading.Thread(target=run_simulations_thread).start()
     
     def _display_race_results(self, average_turns, average_finish_positions, all_play_by_play, ability_activations=None):
-        """Display race simulation results and store logs for export."""
+        """Display race simulation results with enhanced ability statistics display."""
         # Store the complete logs for later export
         self.complete_simulation_logs = all_play_by_play.copy() if all_play_by_play else []
         
@@ -409,19 +409,33 @@ class MagicalAthleteApp:
         if ability_activations:
             self.race_results_text.insert(tk.END, "\nAbility Activation Statistics:\n")
             
-            # Only show characters that were in the race
+            # Only show characters that were in the race and sort by activation count
             race_characters = [char for char, pos in average_finish_positions.items() if pos is not None]
+            ability_data = []
+            
             for char in race_characters:
                 if char in ability_activations:
                     avg_activations = ability_activations[char]
-                    self.race_results_text.insert(tk.END, f"{char}: {avg_activations:.2f} ability uses per race\n")
+                    ability_data.append((char, avg_activations))
+            
+            # Sort by number of activations (descending)
+            ability_data.sort(key=lambda x: x[1], reverse=True)
+            
+            # Display the sorted data
+            for char, avg_activations in ability_data:
+                self.race_results_text.insert(tk.END, f"{char}: {avg_activations:.2f} ability uses per race\n")
         
         # Display sample play-by-play
         self.race_results_text.insert(tk.END, "\nSample Play-by-Play (first simulation):\n")
         
         # Check if we have simulation logs
-        if all_play_by_play and "--- Simulation 1 ---" in all_play_by_play:
-            start_idx = all_play_by_play.index("--- Simulation 1 ---") + 1
+        start_idx = -1
+        for i, line in enumerate(all_play_by_play):
+            if line.startswith("--- Simulation 1 ---"):
+                start_idx = i + 1
+                break
+        
+        if start_idx >= 0:
             end_idx = start_idx + 50  # Show a reasonable number of lines
             
             for i in range(start_idx, min(end_idx, len(all_play_by_play))):

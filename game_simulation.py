@@ -38,6 +38,10 @@ class Game:
 
     def run(self, play_by_play_lines):
         turns = 0
+        
+        for player in self.players:
+            player.ability_activations = 0
+        
         for player in self.players:
             if player.piece == "Mastermind":
                 player.make_prediction(self, play_by_play_lines)
@@ -59,6 +63,11 @@ class Game:
                 self.next_player()
 
         play_by_play_lines.append("The race has ended!")
+        
+        play_by_play_lines.append("\nAbility Activation Summary:")
+        for player in self.players:
+            play_by_play_lines.append(f"{player.name} ({player.piece}): {player.ability_activations} ability uses")
+        
         final_placements = self.assign_final_placements()
         for place, placed_player in final_placements:
             play_by_play_lines.append(f"{place}: {placed_player.name} ({placed_player.piece})")
@@ -135,6 +144,10 @@ class Game:
             self.turn_order.insert(insert_pos, skipper_index)
             play_by_play_lines.append(f"Player {skipper.player_number} (Skipper) has changed the turn order to go next!")
             self.current_player_index = (insert_pos - 1) % len(self.turn_order)
+            
+    def get_ability_statistics(self):
+        """Returns a dictionary with ability activation counts for each character."""
+        return {player.piece: getattr(player, 'ability_activations', 0) for player in self.players}
 
 def _run_single_simulation(character_names, random_turn_order):
     play_by_play_lines = []
@@ -143,11 +156,10 @@ def _run_single_simulation(character_names, random_turn_order):
     return turns, final_placements, play_by_play_lines
 
 def run_simulations(num_simulations, num_players, fixed_characters=None, random_turn_order=False):
-    """Run multiple simulations and return statistics."""
+    """Run multiple simulations and return statistics with proper ability tracking."""
     # Redirect print output to capture debug statements
     import io
     import sys
-    import traceback
     original_stdout = sys.stdout
     sys.stdout = io.StringIO()
     
@@ -156,59 +168,63 @@ def run_simulations(num_simulations, num_players, fixed_characters=None, random_
         finish_positions = {char: [] for char in character_abilities.keys()}
         ability_activations = {char: [] for char in character_abilities.keys()}
         all_play_by_play = []
+        complete_logs = []  # Store full logs for each simulation
         
         for i in range(num_simulations):
-            try:
-                selected_characters = fixed_characters if fixed_characters else random.sample(list(character_abilities.keys()), num_players)
-                game = Game(selected_characters, random_turn_order=random_turn_order)
-                play_by_play_lines = []
-                turns, final_placements = game.run(play_by_play_lines)
-                
-                # Get ability statistics
-                try:
-                    char_ability_stats = game.get_ability_statistics()
-                    for char, count in char_ability_stats.items():
-                        if char in ability_activations:
-                            ability_activations[char].append(count)
-                except AttributeError:
-                    # Method doesn't exist yet, skip ability stats for now
-                    pass
-                
-                all_turns.append(turns)
-                all_play_by_play.extend([f"--- Simulation {i+1} ---"] + play_by_play_lines)
-                
-                for place, player in final_placements:
-                    finish_positions[player.piece].append(int(place[:-2]))
-            except RecursionError as re:
-                # Special handling for recursion errors to identify problematic characters
-                msg = f"Recursion error in simulation {i+1} with characters: {selected_characters}"
-                print(msg)
-                traceback.print_exc()
-                all_play_by_play.extend([f"--- Simulation {i+1} FAILED ---", msg])
-                # Skip this simulation but continue with others
-                continue
-            except Exception as e:
-                # Log other errors but continue with remaining simulations
-                msg = f"Error in simulation {i+1}: {str(e)}"
-                print(msg)
-                traceback.print_exc()
-                all_play_by_play.extend([f"--- Simulation {i+1} FAILED ---", msg])
-                # Skip this simulation but continue with others
-                continue
-        
-        if not all_turns:
-            raise ValueError("All simulations failed! Check the logs for details.")
+            selected_characters = fixed_characters if fixed_characters else random.sample(list(character_abilities.keys()), num_players)
+            game = Game(selected_characters, random_turn_order=random_turn_order)
+            play_by_play_lines = []
             
-        average_turns = sum(all_turns) / len(all_turns) if all_turns else 0
+            # Run the simulation
+            turns, final_placements = game.run(play_by_play_lines)
+            
+            # Store the complete logs
+            complete_logs.append("\n".join(play_by_play_lines))
+            
+            # Debug output - include ability activation counts
+            debug_info = [f"--- Simulation {i+1} ---"]
+            debug_info.append(f"Selected characters: {selected_characters}")
+            debug_info.append("Ability activations:")
+            
+            try:
+                # Get ability statistics
+                char_ability_stats = game.get_ability_statistics()
+                
+                # Debug output
+                for char, count in char_ability_stats.items():
+                    debug_info.append(f"  {char}: {count}")
+                    
+                # Store for averaging
+                for char, count in char_ability_stats.items():
+                    if char in ability_activations:
+                        ability_activations[char].append(count)
+            except Exception as e:
+                debug_info.append(f"Error getting ability statistics: {str(e)}")
+            
+            # Add debug info to play-by-play
+            all_play_by_play.extend(debug_info)
+            all_play_by_play.extend(play_by_play_lines)
+            
+            all_turns.append(turns)
+            
+            for place, player in final_placements:
+                finish_positions[player.piece].append(int(place[:-2]))
+        
+        average_turns = sum(all_turns) / num_simulations if all_turns else 0
         average_finish_positions = {char: (sum(positions) / len(positions)) if positions else None for char, positions in finish_positions.items()}
-        average_ability_activations = {char: (sum(counts) / len(counts)) if counts else 0 for char, counts in ability_activations.items()}
+        
+        # Calculate average ability activations with debug output
+        average_ability_activations = {}
+        for char, counts in ability_activations.items():
+            if counts:
+                avg = sum(counts) / len(counts)
+                average_ability_activations[char] = avg
+                all_play_by_play.append(f"Average ability uses for {char}: {avg:.2f}")
+            else:
+                average_ability_activations[char] = 0
+                all_play_by_play.append(f"No data for {char} ability uses")
         
         return average_turns, average_finish_positions, all_play_by_play, average_ability_activations
-    except Exception as e:
-        # Catch any other errors and provide detailed information
-        error_msg = f"Error in run_simulations: {str(e)}\n{traceback.format_exc()}"
-        print(error_msg)
-        return 0, {}, ["SIMULATION ERROR: " + error_msg], {}
     finally:
         # Restore stdout
         sys.stdout = original_stdout
@@ -227,7 +243,3 @@ def write_play_by_play_to_file(filename, play_by_play_lines):
     with open(filename, 'w') as file:
         for line in play_by_play_lines:
             file.write(line + '\n')
-            
-def get_ability_statistics(self):
-    """Returns a dictionary with ability activation counts for each character."""
-    return {player.piece: getattr(player, 'ability_activations', 0) for player in self.players}

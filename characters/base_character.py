@@ -153,24 +153,37 @@ class Character:
         pass
     
     def register_ability_use(self, game, play_by_play_lines, description=None):
-        """Records that an ability was used by this character, with recursion depth tracking."""
+        """Records that an ability was used by this character, with improved tracking."""
+        # Ensure ability_activations attribute exists
+        if not hasattr(self, 'ability_activations'):
+            self.ability_activations = 0
+        
+        # Ensure recursion tracking exists
+        if not hasattr(game, '_recursion_depths'):
+            game._recursion_depths = {'ability': 0}
+            game._max_recursion_depth = 5
+        
         # Guard against excessive recursion
-        if game._recursion_depths['ability'] >= game._max_recursion_depth:
-            play_by_play_lines.append(f"WARNING: Maximum ability recursion depth ({game._max_recursion_depth}) reached for {self.name} ({self.piece})! Stopping recursion.")
+        if game._recursion_depths.get('ability', 0) >= game._max_recursion_depth:
+            play_by_play_lines.append(
+                f"WARNING: Maximum ability recursion depth reached for {self.name} ({self.piece})! Stopping recursion."
+            )
             return
         
         # Increment recursion counter
-        game._recursion_depths['ability'] += 1
+        game._recursion_depths['ability'] = game._recursion_depths.get('ability', 0) + 1
         
         try:
+            # Increment the ability activation counter
             self.ability_activations += 1
             
-            # Optional: Add detailed tracking message to play-by-play
+            # Add detailed tracking message to play-by-play
             if description:
                 play_by_play_lines.append(f"{self.name} ({self.piece}) used ability: {description}")
             
-            # Trigger Scoocher movement
-            game.trigger_scoocher(play_by_play_lines)
+            # Trigger Scoocher movement (avoid recursion with Scoocher's own ability)
+            if self.piece != "Scoocher":
+                game.trigger_scoocher(play_by_play_lines)
         finally:
             # Decrement recursion counter
-            game._recursion_depths['ability'] -= 1
+            game._recursion_depths['ability'] = game._recursion_depths.get('ability', 0) - 1
