@@ -110,28 +110,37 @@ class Tournament:
         # Run the race and get results
         _, final_placements = self.current_race.run(self.play_by_play)
         
-        # Award points based on placements
-        if len(final_placements) >= 1:
-            gold_piece = final_placements[0][1].piece
-            for player, racer in self.current_race_players:
-                if racer == gold_piece:
-                    player.points["gold"] += 1
-                    break
+        # Get the chip statistics from the game
+        chip_stats = self.current_race.get_chip_statistics()
         
-        if len(final_placements) >= 2:
-            silver_piece = final_placements[1][1].piece
-            for player, racer in self.current_race_players:
-                if racer == silver_piece:
-                    player.points["silver"] += 1
+        # Award points based on gold/silver/bronze chips
+        for game_racer in self.current_race.players:
+            racer_piece = game_racer.piece
+            
+            # Find which player owns this racer
+            owner = None
+            for player, racer_name in self.current_race_players:
+                if racer_name == racer_piece:
+                    owner = player
                     break
-        
-        # Check for bronze chips from Lovable Loser, Hare, etc.
-        for player_piece in self.current_race.players:
-            if hasattr(player_piece, "bronze_chips") and player_piece.bronze_chips > 0:
-                for player, racer in self.current_race_players:
-                    if racer == player_piece.piece:
-                        player.points["bronze"] += player_piece.bronze_chips
-                        break
+                    
+            if owner:
+                # Assign gold chips (5 points each)
+                owner.points["gold"] += game_racer.gold_chips
+                
+                # Assign silver chips (3 points each)
+                owner.points["silver"] += game_racer.silver_chips
+                
+                # Assign bronze chips (1 point each)
+                owner.points["bronze"] += game_racer.bronze_chips
+                
+                # Add a report of points earned to the play-by-play
+                if game_racer.gold_chips > 0 or game_racer.silver_chips > 0 or game_racer.bronze_chips > 0:
+                    points_earned = (game_racer.gold_chips * 5) + (game_racer.silver_chips * 3) + game_racer.bronze_chips
+                    self.play_by_play.append(
+                        f"Points summary: {owner.name} earned {points_earned} points from {racer_piece} " + 
+                        f"(G:{game_racer.gold_chips}, S:{game_racer.silver_chips}, B:{game_racer.bronze_chips})"
+                    )
         
         # Store race results
         self.race_results.append({
@@ -204,10 +213,34 @@ def run_tournament_simulation(player_names):
         tournament = Tournament(player_names)
         winner, all_players, race_results = tournament.run_tournament()
         
+        # Calculate total points for each player
+        player_points = []
+        for player in all_players:
+            gold_points = player.points["gold"] * 5
+            silver_points = player.points["silver"] * 3
+            bronze_points = player.points["bronze"] 
+            total_points = gold_points + silver_points + bronze_points
+            
+            player_points.append({
+                "name": player.name,
+                "gold_chips": player.points["gold"],
+                "silver_chips": player.points["silver"],
+                "bronze_chips": player.points["bronze"],
+                "gold_points": gold_points,
+                "silver_points": silver_points,
+                "bronze_points": bronze_points,
+                "total_points": total_points,
+                "racers": player.racers.copy()
+            })
+        
+        # Sort players by total points (descending)
+        player_points.sort(key=lambda p: p["total_points"], reverse=True)
+        
         # Return the results
         return {
             "winner": str(winner),
             "players": [str(p) for p in all_players],
+            "player_details": player_points,
             "race_results": race_results
         }
     finally:

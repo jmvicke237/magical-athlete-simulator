@@ -14,6 +14,11 @@ class Character:
         self.last_roll = -1
         self.skip_main_move = False
         self.ability_activations = 0
+        
+        # Chip tracking
+        self.gold_chips = 0
+        self.silver_chips = 0
+        self.bronze_chips = 0
 
     def take_turn(self, game, play_by_play_lines):
         self.turn_start_position = self.position

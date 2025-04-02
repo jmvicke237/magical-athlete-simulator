@@ -67,6 +67,11 @@ class Game:
         play_by_play_lines.append("\nAbility Activation Summary:")
         for player in self.players:
             play_by_play_lines.append(f"{player.name} ({player.piece}): {player.ability_activations} ability uses")
+            
+        play_by_play_lines.append("\nChip Summary:")
+        for player in self.players:
+            points = (player.gold_chips * 5) + (player.silver_chips * 3) + (player.bronze_chips * 1)
+            play_by_play_lines.append(f"{player.name} ({player.piece}): {points} points (Gold: {player.gold_chips}, Silver: {player.silver_chips}, Bronze: {player.bronze_chips})")
         
         final_placements = self.assign_final_placements()
         for place, placed_player in final_placements:
@@ -93,7 +98,18 @@ class Game:
         if not player.finished:
             player.finished = True
             self.finished_players.append(player)
-            play_by_play_lines.append(f"{player.name} ({player.piece}) finished the race!")
+            
+            # Award gold or silver chips based on finish position
+            if len(self.finished_players) == 1:
+                # First place gets a gold chip (5 points)
+                player.gold_chips += 1
+                play_by_play_lines.append(f"{player.name} ({player.piece}) finished the race in 1st place and received a gold chip!")
+            elif len(self.finished_players) == 2:
+                # Second place gets a silver chip (3 points)
+                player.silver_chips += 1
+                play_by_play_lines.append(f"{player.name} ({player.piece}) finished the race in 2nd place and received a silver chip!")
+            else:
+                play_by_play_lines.append(f"{player.name} ({player.piece}) finished the race!")
 
     def eliminate_player(self, player, play_by_play_lines):
         if player not in self.eliminated_players:
@@ -148,6 +164,18 @@ class Game:
     def get_ability_statistics(self):
         """Returns a dictionary with ability activation counts for each character."""
         return {player.piece: getattr(player, 'ability_activations', 0) for player in self.players}
+        
+    def get_chip_statistics(self):
+        """Returns a dictionary with chip counts for each character."""
+        chip_stats = {}
+        for player in self.players:
+            chip_stats[player.piece] = {
+                'gold': player.gold_chips,
+                'silver': player.silver_chips,
+                'bronze': player.bronze_chips,
+                'points': (player.gold_chips * 5) + (player.silver_chips * 3) + (player.bronze_chips * 1)
+            }
+        return chip_stats
 
 def _run_single_simulation(character_names, random_turn_order):
     play_by_play_lines = []
@@ -167,6 +195,8 @@ def run_simulations(num_simulations, num_players, fixed_characters=None, random_
         all_turns = []
         finish_positions = {char: [] for char in character_abilities.keys()}
         ability_activations = {char: [] for char in character_abilities.keys()}
+        appearance_count = {char: 0 for char in character_abilities.keys()}  # Track appearances
+        chip_statistics = {char: [] for char in character_abilities.keys()}  # Track chip statistics
         all_play_by_play = []
         complete_logs = []  # Store full logs for each simulation
         
@@ -174,6 +204,10 @@ def run_simulations(num_simulations, num_players, fixed_characters=None, random_
             selected_characters = fixed_characters if fixed_characters else random.sample(list(character_abilities.keys()), num_players)
             game = Game(selected_characters, random_turn_order=random_turn_order)
             play_by_play_lines = []
+            
+            # Count appearances for each character in this race
+            for char in selected_characters:
+                appearance_count[char] += 1
             
             # Run the simulation
             turns, final_placements = game.run(play_by_play_lines)
@@ -191,6 +225,7 @@ def run_simulations(num_simulations, num_players, fixed_characters=None, random_
                 char_ability_stats = game.get_ability_statistics()
                 
                 # Debug output
+                debug_info.append("Ability activations:")
                 for char, count in char_ability_stats.items():
                     debug_info.append(f"  {char}: {count}")
                     
@@ -198,8 +233,22 @@ def run_simulations(num_simulations, num_players, fixed_characters=None, random_
                 for char, count in char_ability_stats.items():
                     if char in ability_activations:
                         ability_activations[char].append(count)
+                
+                # Get chip statistics
+                chip_stats = game.get_chip_statistics()
+                
+                # Debug output
+                debug_info.append("Chip statistics:")
+                for char, stats in chip_stats.items():
+                    debug_info.append(f"  {char}: {stats['points']} points (G:{stats['gold']}, S:{stats['silver']}, B:{stats['bronze']})")
+                    
+                # Track chip statistics (we'll add it to the return values)
+                for char, stats in chip_stats.items():
+                    if char not in chip_statistics:
+                        chip_statistics[char] = []
+                    chip_statistics[char].append(stats)
             except Exception as e:
-                debug_info.append(f"Error getting ability statistics: {str(e)}")
+                debug_info.append(f"Error getting statistics: {str(e)}")
             
             # Add debug info to play-by-play
             all_play_by_play.extend(debug_info)
@@ -224,7 +273,37 @@ def run_simulations(num_simulations, num_players, fixed_characters=None, random_
                 average_ability_activations[char] = 0
                 all_play_by_play.append(f"No data for {char} ability uses")
         
-        return average_turns, average_finish_positions, all_play_by_play, average_ability_activations
+        # Calculate average chip statistics
+        average_chip_stats = {}
+        for char, stats_list in chip_statistics.items():
+            if stats_list:
+                # Calculate averages for each chip type and points
+                total_gold = sum(s['gold'] for s in stats_list)
+                total_silver = sum(s['silver'] for s in stats_list)
+                total_bronze = sum(s['bronze'] for s in stats_list)
+                total_points = sum(s['points'] for s in stats_list)
+                num_appearances = len(stats_list)
+                
+                average_chip_stats[char] = {
+                    'gold_avg': total_gold / num_appearances,
+                    'silver_avg': total_silver / num_appearances,
+                    'bronze_avg': total_bronze / num_appearances,
+                    'points_avg': total_points / num_appearances
+                }
+                
+                all_play_by_play.append(f"Average points for {char}: {total_points / num_appearances:.2f}")
+            else:
+                average_chip_stats[char] = {
+                    'gold_avg': 0, 'silver_avg': 0, 'bronze_avg': 0, 'points_avg': 0
+                }
+        
+        # Add character appearance counts to the debug output
+        all_play_by_play.append("\nCharacter appearance counts:")
+        for char, count in appearance_count.items():
+            if count > 0:
+                all_play_by_play.append(f"{char}: {count} races")
+        
+        return average_turns, average_finish_positions, all_play_by_play, average_ability_activations, appearance_count, average_chip_stats
     finally:
         # Restore stdout
         sys.stdout = original_stdout
