@@ -1,13 +1,24 @@
 # game_simulation.py
 import random
-from config import character_abilities, BOARD_LENGTH, MAX_TURNS, CORNER_POSITION
+from config import character_abilities, BOARD_LENGTH, MAX_TURNS, CORNER_POSITION, BOARD_TYPES, DEFAULT_BOARD_TYPE
 from characters.base_character import Character
 from board import Board
 
 class Game:
-    def __init__(self, character_names, board=None, random_turn_order=False):
+    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False):
         self.players = []
-        self.board = board or Board(corner_position=CORNER_POSITION)
+        
+        # Handle board creation
+        if board:
+            self.board = board
+        else:
+            # If board_type is Random, choose between Mild and Wild
+            actual_board_type = board_type
+            if board_type == "Random":
+                actual_board_type = random.choice(["Mild", "Wild"])
+            
+            self.board = Board(board_type=actual_board_type, corner_position=CORNER_POSITION)
+        
         self.finished_players = []
         self.eliminated_players = []
         self.turn_order = []
@@ -177,13 +188,15 @@ class Game:
             }
         return chip_stats
 
-def _run_single_simulation(character_names, random_turn_order):
+def _run_single_simulation(character_names, board_type=DEFAULT_BOARD_TYPE, random_turn_order=False):
     play_by_play_lines = []
-    game = Game(character_names, random_turn_order=random_turn_order)
+    game = Game(character_names, board_type=board_type, random_turn_order=random_turn_order)
     turns, final_placements = game.run(play_by_play_lines)
-    return turns, final_placements, play_by_play_lines
+    # Add board info to play-by-play
+    play_by_play_lines.insert(0, f"Board: {game.board.get_display_name()}")
+    return turns, final_placements, play_by_play_lines, game.board.board_type
 
-def run_simulations(num_simulations, num_players, fixed_characters=None, random_turn_order=False):
+def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False):
     """Run multiple simulations and return statistics with proper ability tracking."""
     # Redirect print output to capture debug statements
     import io
@@ -200,17 +213,28 @@ def run_simulations(num_simulations, num_players, fixed_characters=None, random_
         all_play_by_play = []
         complete_logs = []  # Store full logs for each simulation
         
+        # Track board type usage
+        board_type_counts = {"Mild": 0, "Wild": 0}
+        
         for i in range(num_simulations):
             selected_characters = fixed_characters if fixed_characters else random.sample(list(character_abilities.keys()), num_players)
-            game = Game(selected_characters, random_turn_order=random_turn_order)
-            play_by_play_lines = []
             
+            # Run the simulation with the specified board type
+            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order)
+            play_by_play_lines = []
+            turns, final_placements = game.run(play_by_play_lines)
+            
+            # Add board info to play-by-play
+            play_by_play_lines.insert(0, f"Board: {game.board.get_display_name()}")
+            used_board_type = game.board.board_type
+            
+            # Track which board type was used
+            if used_board_type in board_type_counts:
+                board_type_counts[used_board_type] += 1
+                
             # Count appearances for each character in this race
             for char in selected_characters:
                 appearance_count[char] += 1
-            
-            # Run the simulation
-            turns, final_placements = game.run(play_by_play_lines)
             
             # Store the complete logs
             complete_logs.append("\n".join(play_by_play_lines))
@@ -221,8 +245,11 @@ def run_simulations(num_simulations, num_players, fixed_characters=None, random_
             debug_info.append("Ability activations:")
             
             try:
+                # Get the game object from the most recent simulation
+                current_game = game  # This was the issue - 'game' variable wasn't defined in this scope
+                
                 # Get ability statistics
-                char_ability_stats = game.get_ability_statistics()
+                char_ability_stats = current_game.get_ability_statistics()
                 
                 # Debug output
                 debug_info.append("Ability activations:")
@@ -235,7 +262,7 @@ def run_simulations(num_simulations, num_players, fixed_characters=None, random_
                         ability_activations[char].append(count)
                 
                 # Get chip statistics
-                chip_stats = game.get_chip_statistics()
+                chip_stats = current_game.get_chip_statistics()
                 
                 # Debug output
                 debug_info.append("Chip statistics:")
@@ -303,7 +330,14 @@ def run_simulations(num_simulations, num_players, fixed_characters=None, random_
             if count > 0:
                 all_play_by_play.append(f"{char}: {count} races")
         
-        return average_turns, average_finish_positions, all_play_by_play, average_ability_activations, appearance_count, average_chip_stats
+        # Add board type usage statistics
+        all_play_by_play.append("\nBoard type usage:")
+        for board_type, count in board_type_counts.items():
+            if count > 0:
+                percentage = (count / num_simulations) * 100
+                all_play_by_play.append(f"{board_type} Board: {count} races ({percentage:.1f}%)")
+        
+        return average_turns, average_finish_positions, all_play_by_play, average_ability_activations, appearance_count, average_chip_stats, board_type_counts
     finally:
         # Restore stdout
         sys.stdout = original_stdout

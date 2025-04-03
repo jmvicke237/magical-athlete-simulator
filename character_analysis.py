@@ -128,9 +128,9 @@ class CharacterAnalyzer:
         if cache_key in self.results_cache and cache_results:
             return self.results_cache[cache_key]
         
-        # Run the simulations with updated function signature
-        average_turns, average_positions, play_by_play, ability_counts = run_simulations(
-            num_simulations, players_per_race, [character_name], random_turn_order=True
+        # Run the simulations
+        average_turns, average_positions, play_by_play, ability_counts, appearance_count, chip_stats, board_type_counts = run_simulations(
+            num_simulations, players_per_race, fixed_characters=[character_name], random_turn_order=True
         )
         
         # Get ability activation count from the new data

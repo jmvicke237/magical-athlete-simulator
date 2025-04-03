@@ -1,6 +1,6 @@
 # tournament.py
 import random
-from config import character_abilities
+from config import character_abilities, DEFAULT_BOARD_TYPE
 from game_simulation import Game, Board
 
 class Player:
@@ -82,7 +82,7 @@ class Tournament:
                     available_racers.remove(pick)
                     player.add_racer(pick)
     
-    def setup_race(self):
+    def setup_race(self, board_type=DEFAULT_BOARD_TYPE):
         """Set up the next race in the tournament."""
         self.current_race_players = []
         
@@ -92,9 +92,9 @@ class Tournament:
             if racer:
                 self.current_race_players.append((player, racer))
         
-        # Create the race with the selected racers
+        # Create the race with the selected racers and specified board type
         racer_names = [racer for _, racer in self.current_race_players]
-        self.current_race = Game(racer_names)
+        self.current_race = Game(racer_names, board_type=board_type)
         
         # Reset play-by-play for this race
         self.play_by_play = []
@@ -185,14 +185,14 @@ class Tournament:
         
         return min_points_player
     
-    def run_tournament(self):
+    def run_tournament(self, board_type=DEFAULT_BOARD_TYPE):
         """Run a full 4-race tournament."""
         # Draft racers
         self.draft_racers()
         
         # Run 4 races
         for _ in range(4):
-            self.setup_race()
+            self.setup_race(board_type=board_type)
             if self.current_race_players:  # Make sure we have racers
                 self.run_race()
         
@@ -201,7 +201,7 @@ class Tournament:
         return winner, self.players, self.race_results
 
 
-def run_tournament_simulation(player_names):
+def run_tournament_simulation(player_names, board_type=DEFAULT_BOARD_TYPE):
     """Run a simulation of a tournament with the given player names."""
     # Redirect print output to capture debug statements
     import io
@@ -211,7 +211,7 @@ def run_tournament_simulation(player_names):
     
     try:
         tournament = Tournament(player_names)
-        winner, all_players, race_results = tournament.run_tournament()
+        winner, all_players, race_results = tournament.run_tournament(board_type=board_type)
         
         # Calculate total points for each player
         player_points = []

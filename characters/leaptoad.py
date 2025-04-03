@@ -43,6 +43,8 @@ class Leaptoad(Character):
             play_by_play_lines.append(
                 f"{self.name} ({self.piece}) moved from {original_position} to {self.position}"
             )
+            current_space = game.board.spaces[self.position]
+            current_space.on_enter(self, game, play_by_play_lines)
           
         # Move Suckerfish before checking for another_player_move to avoid conflicts with Romantic etc
         for p in game.players:

@@ -65,7 +65,7 @@ class Character:
                 roll = other_player.modify_other_roll(self, game, play_by_play_lines, roll)
         return roll
     
-    def move(self, game, play_by_play_lines, spaces):
+    def move(self, game, play_by_play_lines, spaces): # If this is changed, also change Leaptoad
         """Move a character, with recursion depth tracking."""
         # Guard against excessive recursion
         if game._recursion_depths['movement'] >= game._max_recursion_depth:
@@ -88,6 +88,9 @@ class Character:
                 play_by_play_lines.append(f"{self.name} ({self.piece}) moved from {self.previous_position} to {self.position} and finished!")
             else:
                 play_by_play_lines.append(f"{self.name} ({self.piece}) moved from {self.previous_position} to {self.position}")
+                # Trigger board space effects
+                current_space = game.board.spaces[self.position]
+                current_space.on_enter(self, game, play_by_play_lines)
 
             # Move Suckerfish before checking for on another_player_move to avoid conflicts
             for p in game.players:
@@ -134,6 +137,9 @@ class Character:
                 play_by_play_lines.append(f"{self.name} ({self.piece}) jumped from {self.previous_position} to {self.position} and finished!")
             else:
                 play_by_play_lines.append(f"{self.name} ({self.piece}) jumped from {self.previous_position} to {self.position}")
+                # Trigger board space effects
+                current_space = game.board.spaces[self.position]
+                current_space.on_enter(self, game, play_by_play_lines)
 
             # Notify other players about the jump
             for other_player in game.players:

@@ -17,7 +17,7 @@ The simulator provides insights into game balance, character effectiveness, and 
 ## Features
 
 - **Tournament Simulation**: Simulates a complete 4-race tournament with multiple players, character drafting, and point tracking
-- **Single Race Simulation**: Allows for quick simulations of individual races with configurable characters
+- **Single Race Simulation**: Allows for quick simulations of individual races with configurable characters and board types
 - **Character Statistics**: Provides aggregate statistics on character performance across many simulations
 - **Character Analysis**: Deep-dive analysis of individual character abilities, movement patterns, and winning strategies
 - **Visualizations**: Graphical representations of character performance and race outcomes
@@ -56,18 +56,20 @@ The simulator provides insights into game balance, character effectiveness, and 
 1. Select the "Tournament Simulation" tab
 2. Set the number of players (2-6)
 3. Enter player names
-4. Click "Run Tournament"
-5. Review the tournament results, including race outcomes, points earned, and the overall winner
+4. Select a board type (Mild, Wild, or Random)
+5. Click "Run Tournament"
+6. Review the tournament results, including race outcomes, points earned, and the overall winner
 
 ### Single Race Simulation
 
 1. Select the "Single Race Simulation" tab
 2. Configure the number of simulations and racers
-3. Choose between random or fixed character selection
-4. If fixed, select the characters to include
-5. Click "Run Race Simulations"
-6. Review the race statistics and sample play-by-play
-7. Download the complete play-by-play
+3. Select a board type (Mild, Wild, or Random)
+4. Choose between random or fixed character selection
+5. If fixed, select the characters to include
+6. Click "Run Race Simulations"
+7. Review the race statistics and sample play-by-play
+8. Download the complete play-by-play
 
 ### Character Statistics
 
@@ -109,9 +111,20 @@ The simulator provides insights into game balance, character effectiveness, and 
 ### Modifying Game Rules
 
 Game rules can be adjusted in:
-- `board.py` for board-related rules
+- `board.py` for board-related rules and board types
 - `game_simulation.py` for race mechanics
 - `tournament.py` for tournament structure and scoring
+
+### Board Types
+
+The simulator supports two board types:
+- **Mild**: A standard 30-space board with a corner at space 15
+- **Wild**: A 30-space board with a corner at space 15 and special spaces:
+  - Bronze chip spaces (1, 13)
+  - Trip spaces (5, 17, 26)
+  - Movement spaces (7: +3, 11: +1, 16: -4, 23: +2, 24: -2)
+  
+You can also select "Random" to have the game randomly choose between Mild and Wild for each race.
 
 ## License
 

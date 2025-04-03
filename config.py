@@ -82,4 +82,8 @@ character_abilities = {
 # Game-wide constants
 BOARD_LENGTH = 30
 MAX_TURNS = 50
-CORNER_POSITION = 20
+CORNER_POSITION = 15  # Updated to match new board layout
+
+# Board options
+BOARD_TYPES = ["Mild", "Wild", "Random"]
+DEFAULT_BOARD_TYPE = "Mild"

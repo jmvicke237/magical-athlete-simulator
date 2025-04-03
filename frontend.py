@@ -6,7 +6,7 @@ import time
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tournament import Tournament, run_tournament_simulation
-from config import character_abilities
+from config import character_abilities, BOARD_TYPES, DEFAULT_BOARD_TYPE
 from game_simulation import Game, run_simulations
 from character_analysis import CharacterAnalyzer
 from debug_utils import log_exception, get_full_error_message
@@ -60,6 +60,11 @@ class MagicalAthleteApp:
             entry.grid(row=i+1, column=1, padx=5, pady=5, sticky="w")
             self.player_name_entries.append(entry)
         
+        # Board type selection
+        ttk.Label(left_frame, text="Board Type:").grid(row=7, column=0, padx=5, pady=5, sticky="w")
+        self.tournament_board_type_var = tk.StringVar(value=DEFAULT_BOARD_TYPE)
+        ttk.Combobox(left_frame, values=BOARD_TYPES, textvariable=self.tournament_board_type_var, width=10).grid(row=7, column=1, padx=5, pady=5, sticky="w")
+        
         # Run tournament button
         ttk.Button(left_frame, text="Run Tournament", command=self._run_tournament).grid(row=8, column=0, columnspan=2, padx=5, pady=10)
         
@@ -91,14 +96,19 @@ class MagicalAthleteApp:
         self.num_racers_var = tk.IntVar(value=4)
         ttk.Spinbox(left_frame, from_=2, to=10, textvariable=self.num_racers_var, width=5).grid(row=1, column=1, padx=5, pady=5, sticky="w")
         
+        # Board type selection
+        ttk.Label(left_frame, text="Board Type:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        self.board_type_var = tk.StringVar(value=DEFAULT_BOARD_TYPE)
+        ttk.Combobox(left_frame, values=BOARD_TYPES, textvariable=self.board_type_var, width=10).grid(row=2, column=1, padx=5, pady=5, sticky="w")
+        
         # Fixed characters or random
-        ttk.Label(left_frame, text="Character Selection:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(left_frame, text="Character Selection:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
         self.char_selection_var = tk.StringVar(value="Random")
-        ttk.Combobox(left_frame, values=["Random", "Fixed"], textvariable=self.char_selection_var, width=10).grid(row=2, column=1, padx=5, pady=5, sticky="w")
+        ttk.Combobox(left_frame, values=["Random", "Fixed"], textvariable=self.char_selection_var, width=10).grid(row=3, column=1, padx=5, pady=5, sticky="w")
         
         # Character selection frame (will be populated dynamically)
         self.character_selection_frame = ttk.Frame(left_frame)
-        self.character_selection_frame.grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky="w")
+        self.character_selection_frame.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky="w")
         
         self.char_selection_var.trace_add("write", self._update_character_selection)
         
@@ -293,15 +303,18 @@ class MagicalAthleteApp:
         # Get player names
         player_names = [self.player_name_entries[i].get() for i in range(num_players)]
         
+        # Get board type
+        board_type = self.tournament_board_type_var.get()
+        
         # Clear results
         self.tournament_results_text.delete(1.0, tk.END)
-        self.tournament_results_text.insert(tk.END, "Running tournament simulation...\n\n")
+        self.tournament_results_text.insert(tk.END, f"Running tournament simulation with {board_type} board...\n\n")
         self.root.update()
         
         # Run tournament in a separate thread
         def run_tournament_thread():
             try:
-                results = run_tournament_simulation(player_names)
+                results = run_tournament_simulation(player_names, board_type=board_type)
                 
                 # Display results
                 self.root.after(0, lambda: self._display_tournament_results(results))
@@ -379,6 +392,7 @@ class MagicalAthleteApp:
         # Get configuration values
         num_simulations = self.num_simulations_var.get()
         num_racers = self.num_racers_var.get()
+        board_type = self.board_type_var.get()  # Get the selected board type
         
         # Get selected characters
         fixed_characters = None
@@ -390,7 +404,7 @@ class MagicalAthleteApp:
         
         # Clear results
         self.race_results_text.delete(1.0, tk.END)
-        self.race_results_text.insert(tk.END, "Running race simulations...\n\n")
+        self.race_results_text.insert(tk.END, f"Running race simulations with {board_type} board...\n\n")
         self.root.update()
         
         # Run simulations in a separate thread
@@ -398,9 +412,9 @@ class MagicalAthleteApp:
 
         def run_simulations_thread():
             try:
-                # Updated to handle the additional returns including chip statistics
-                average_turns, average_finish_positions, all_play_by_play, ability_activations, appearance_count, chip_stats = run_simulations(
-                    num_simulations, num_racers, fixed_characters, random_turn_order=True
+                # Updated to handle the additional returns including chip statistics and board type counts
+                average_turns, average_finish_positions, all_play_by_play, ability_activations, appearance_count, chip_stats, board_type_counts = run_simulations(
+                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True
                 )
                 
                 # Display results with ability data included
