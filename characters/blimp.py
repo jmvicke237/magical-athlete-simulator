@@ -10,7 +10,7 @@ class Blimp(Character):
         """Modifies the Blimp's roll based on its position."""
 
         if self.turn_start_position < game.board.corner_position:  # Directly access corner_position
-            modified_roll = roll + 2
+            modified_roll = roll + 3
             play_by_play_lines.append(f"{self.name} ({self.piece}) gets +2 to their roll (before corner). Roll: {roll} -> {modified_roll}")
         else:
             modified_roll = max(1, roll - 1)

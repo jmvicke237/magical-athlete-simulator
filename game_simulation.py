@@ -31,7 +31,7 @@ class Game:
             'ability': 0,
             'space_check': 0
         }
-        self._max_recursion_depth = 5  # Set a reasonable limit
+        self._max_recursion_depth = 3  # Set a reasonable limit
         
         self._create_players(character_names, random_turn_order)
 

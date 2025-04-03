@@ -67,9 +67,19 @@ class Character:
     
     def move(self, game, play_by_play_lines, spaces): # If this is changed, also change Leaptoad
         """Move a character, with recursion depth tracking."""
+        # Import the logger for recursion tracking
+        from debug_utils import log_recursion_state, logger
+        
+        # Log state only when approaching recursion limits
+        log_recursion_state(game, "move", self)
+        
         # Guard against excessive recursion
         if game._recursion_depths['movement'] >= game._max_recursion_depth:
             play_by_play_lines.append(f"WARNING: Maximum movement recursion depth ({game._max_recursion_depth}) reached for {self.name} ({self.piece})! Stopping recursion.")
+            
+            # Log critical info about the recursion only when it happens
+            position_info = f"position={self.position}, spaces={spaces}"
+            logger.error(f"Movement recursion limit reached for {self.name} ({self.piece}) at {position_info}")
             return
         
         # Increment recursion counter
@@ -88,6 +98,7 @@ class Character:
                 play_by_play_lines.append(f"{self.name} ({self.piece}) moved from {self.previous_position} to {self.position} and finished!")
             else:
                 play_by_play_lines.append(f"{self.name} ({self.piece}) moved from {self.previous_position} to {self.position}")
+                
                 # Trigger board space effects
                 current_space = game.board.spaces[self.position]
                 current_space.on_enter(self, game, play_by_play_lines)
@@ -119,9 +130,19 @@ class Character:
 
     def jump(self, game, position, play_by_play_lines):
         """Jump/warp a character to a position, with recursion depth tracking."""
+        # Import the logger for recursion tracking
+        from debug_utils import log_recursion_state, logger
+        
+        # Log state only when approaching recursion limits
+        log_recursion_state(game, "jump", self)
+        
         # Guard against excessive recursion
         if game._recursion_depths['movement'] >= game._max_recursion_depth:
             play_by_play_lines.append(f"WARNING: Maximum jump recursion depth ({game._max_recursion_depth}) reached for {self.name} ({self.piece})! Stopping recursion.")
+            
+            # Log critical info about the recursion only when it happens
+            position_info = f"from={self.position}, to={position}"
+            logger.error(f"Jump recursion limit reached for {self.name} ({self.piece}) at {position_info}")
             return
         
         # Increment recursion counter
@@ -137,6 +158,7 @@ class Character:
                 play_by_play_lines.append(f"{self.name} ({self.piece}) jumped from {self.previous_position} to {self.position} and finished!")
             else:
                 play_by_play_lines.append(f"{self.name} ({self.piece}) jumped from {self.previous_position} to {self.position}")
+                
                 # Trigger board space effects
                 current_space = game.board.spaces[self.position]
                 current_space.on_enter(self, game, play_by_play_lines)

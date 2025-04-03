@@ -65,3 +65,18 @@ def track_recursion_depth(func):
         return func(*args, **kwargs)
     
     return wrapper
+
+def log_recursion_state(game, operation, player=None):
+    """Log the current recursion state with detailed information, but only when needed"""
+    # Only log if we're approaching recursion limits
+    if any(depth >= game._max_recursion_depth - 1 for depth in game._recursion_depths.values()):
+        player_info = f" for {player.name} ({player.piece})" if player else ""
+        message = f"Recursion state{player_info}: "
+        for op, depth in game._recursion_depths.items():
+            message += f"{op}={depth} "
+        logger.warning(f"Approaching recursion limit on {operation}{player_info}: {message}")
+        
+        # Get a stack trace for better debugging
+        import traceback
+        stack = traceback.format_stack()[:-1]  # Exclude this function call
+        logger.warning(f"Stack trace approaching recursion limit:\n{''.join(stack)}")
