@@ -57,5 +57,5 @@ class Romantic(Character):
         if len(space_mates) == 1:
             if moved_player.piece != "HugeBaby" and space_mates[0].piece != "HugeBaby":
                 play_by_play_lines.append(f"{self.name} ({self.piece}) moved 1 because {moved_player.name} ({moved_player.piece}) shared a space with exactly one player.")
-                self.move(game, play_by_play_lines, 1)
+                self.move(game, play_by_play_lines, 2)
                 self.register_ability_use(game, play_by_play_lines, description="Romantic")

@@ -39,6 +39,7 @@ from characters.egg import Egg
 from characters.loveableloser import LoveableLoser
 from characters.twin import Twin
 from characters.thirdwheel import ThirdWheel
+from characters.sisyphis import Sisyphis
 
 character_abilities = {
     "HugeBaby": HugeBaby,
@@ -76,7 +77,8 @@ character_abilities = {
     "Egg": Egg,
     "LovableLoser": LoveableLoser,
     "Twin": Twin,
-    "ThirdWheel": ThirdWheel
+    "ThirdWheel": ThirdWheel,
+    "Sisyphis": Sisyphis
 }
 
 # Game-wide constants
