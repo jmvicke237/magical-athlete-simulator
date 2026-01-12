@@ -1,8 +1,13 @@
 # partyanimal.py
 
 from .base_character import Character
+from power_system import PowerPhase
 
 class PartyAnimal(Character):
+    """At the start of my turn, all racers move 1 space towards me.
+    Each other racer on my space gives me +1 to my main move."""
+
+    POWER_PHASES = {PowerPhase.PRE_ROLL, PowerPhase.ROLL_MODIFICATION}
     def __init__(self, name, piece):
         super().__init__(name, piece)
         self.number_of_sharers = 0

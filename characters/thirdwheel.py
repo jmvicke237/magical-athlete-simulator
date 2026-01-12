@@ -1,8 +1,13 @@
 # thirdwheel.py
 
 from .base_character import Character
+from power_system import PowerPhase
 
 class ThirdWheel(Character):
+    """Before my main move, I can warp to any space with exactly 2 racers in it."""
+
+    POWER_PHASES = {PowerPhase.PRE_ROLL}
+
     def pre_move_action(self, game, play_by_play_lines):
         """Warps to any Space with exactly 2 racers on it."""
 

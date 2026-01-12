@@ -1,6 +1,11 @@
 from characters.base_character import Character
+from power_system import PowerPhase
 
 class Sisyphis(Character):
+    """When I roll a 6, I go back to start and lose a bronze chip."""
+
+    POWER_PHASES = {PowerPhase.DIE_ROLL_TRIGGER}
+
     def __init__(self, name, piece):
         super().__init__(name, piece)
         # Start with 4 bronze point chips

@@ -1,8 +1,13 @@
 # characters/cheerleader.py
 
 from .base_character import Character
+from power_system import PowerPhase
 
 class Cheerleader(Character):
+    """At the start of my turn, I can make the racer(s) in last place move 2. If I do, I move 1."""
+
+    POWER_PHASES = {PowerPhase.PRE_ROLL}
+
     def __init__(self, name, piece):
         super().__init__(name, piece)
 

@@ -1,8 +1,13 @@
 # hypnotist.py
 
 from .base_character import Character
+from power_system import PowerPhase
 
 class Hypnotist(Character):
+    """At the start of my turn, I can warp a racer to my space."""
+
+    POWER_PHASES = {PowerPhase.PRE_ROLL}
+
     def pre_move_action(self, game, play_by_play_lines):
         """The Hypnotist warps the furthest player ahead of them to their space."""
 

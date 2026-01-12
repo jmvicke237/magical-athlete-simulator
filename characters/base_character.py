@@ -1,7 +1,24 @@
 # characters/base_character.py
 import random
+from power_system import PowerPhase
 
 class Character:
+    """Base character class for Magical Athlete racers.
+
+    Power Phase System:
+    Characters can declare which phases they participate in by setting the
+    POWER_PHASES class attribute to a set of PowerPhase values.
+
+    Example:
+        class Gunk(Character):
+            POWER_PHASES = {PowerPhase.ROLL_MODIFICATION}
+
+    If POWER_PHASES is not defined, the character has no special abilities
+    and only uses standard movement.
+    """
+
+    # Characters with abilities should override this
+    POWER_PHASES = set()
     def __init__(self, name, piece):
         self.name = name
         self.piece = piece
@@ -21,30 +38,73 @@ class Character:
         self.bronze_chips = 0
 
     def take_turn(self, game, play_by_play_lines):
+        """Execute a full turn using the phase-based power resolution system.
+
+        Phase order (per official rules):
+        1. PRE_ROLL - Before rolling (Cheerleader, Hypnotist, Party Animal)
+        2. DIE_ROLL_TRIGGER - Triggered by roll (Inchworm, Skipper)
+        3. ROLL_MODIFICATION - Modify roll (Gunk, Coach, Blimp)
+        4. MOVEMENT - Execute movement
+        5. POST_MOVEMENT - Board effects, character reactions (HugeBaby)
+        6. OTHER_REACTIONS - Other players react (Romantic, Scoocher)
+        7. POST_TURN - End of turn (Duelist)
+        """
         self.turn_start_position = self.position
         self.last_roll = -1
+
+        # Check if tripped
         if self.tripped:
             self.tripped = False
             self.skip_main_move = True
             play_by_play_lines.append(f"{self.name} ({self.piece}) is tripped and skips their main move.")
-        self.pre_move_action(game, play_by_play_lines)
+
+        # PHASE 1: PRE_ROLL - Abilities before rolling
+        game.resolve_phase(PowerPhase.PRE_ROLL, self, play_by_play_lines)
+
         if not self.skip_main_move:
+            # Roll the die
             roll = self.main_roll(game, play_by_play_lines)
             self.last_roll = roll
-            # Check for Dicemonger or other racer that allows for reroll of mainroll
+
+            # Handle rerolls (Magician, Dicemonger)
+            # Note: Rerolls happen before triggers, so we handle them specially
             for player_index in game.turn_order:
                 other_player = game.players[player_index]
                 if hasattr(other_player, "reroll_main_roll"):
                     roll = other_player.reroll_main_roll(self, game, play_by_play_lines, roll)
-            self.last_roll = roll
-            # Call trigger_on_main_move_roll on all other players *before* modifying the roll
-            for player_index in game.turn_order:
-                other_player = game.players[player_index]
-                other_player.trigger_on_main_move_roll(self, game, self.last_roll, play_by_play_lines)
+                    self.last_roll = roll
+
+            # PHASE 2: DIE_ROLL_TRIGGER - Powers triggered by the roll value (before mods)
+            context = game.resolve_phase(PowerPhase.DIE_ROLL_TRIGGER, self, play_by_play_lines,
+                                        context={'roll': roll})
+
+            # Check if Inchworm or similar set skip_main_move
             if not self.skip_main_move:
-                roll = self.modify_roll(game, play_by_play_lines, roll)
-                self.move(game, play_by_play_lines, roll)
+                # PHASE 3: ROLL_MODIFICATION - Modify the roll value
+                context = game.resolve_phase(PowerPhase.ROLL_MODIFICATION, self, play_by_play_lines,
+                                            context={'roll': roll})
+                roll = context.get('roll', roll)
+                self.last_roll = roll
+
+                # PHASE 4: MOVEMENT - Execute the move
+                game.resolve_phase(PowerPhase.MOVEMENT, self, play_by_play_lines,
+                                  context={'spaces': roll})
+
+                # PHASE 5: POST_MOVEMENT - Board effects and character reactions
+                # Note: This is mostly handled within move() via on_enter() and on_another_player_move()
+                # But we call it here for completeness and to ensure proper ordering
+                game.resolve_phase(PowerPhase.POST_MOVEMENT, self, play_by_play_lines)
+
+        # Execute post-move ability (for backwards compatibility with characters that use this)
         self.post_move_ability(game, play_by_play_lines)
+
+        # PHASE 6: OTHER_REACTIONS - Additional reactions
+        # Note: Most reactions happen via on_another_player_move() called from within move()
+        game.resolve_phase(PowerPhase.OTHER_REACTIONS, self, play_by_play_lines)
+
+        # PHASE 7: POST_TURN - End of turn actions
+        game.resolve_phase(PowerPhase.POST_TURN, self, play_by_play_lines)
+
         # Reset skip_main_move flag at end of turn
         if self.skip_main_move:
             self.skip_main_move = False

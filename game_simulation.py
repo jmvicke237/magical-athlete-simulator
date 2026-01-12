@@ -3,6 +3,7 @@ import random
 from config import character_abilities, BOARD_LENGTH, MAX_TURNS, CORNER_POSITION, BOARD_TYPES, DEFAULT_BOARD_TYPE
 from characters.base_character import Character
 from board import Board
+from power_system import PowerPhase
 
 class Game:
     def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False):
@@ -171,6 +172,117 @@ class Game:
             self.turn_order.insert(insert_pos, skipper_index)
             play_by_play_lines.append(f"Player {skipper.player_number} (Skipper) has changed the turn order to go next!")
             self.current_player_index = (insert_pos - 1) % len(self.turn_order)
+
+    def resolve_phase(self, phase, current_player, play_by_play_lines, context=None):
+        """Resolve all powers in a specific phase following official rules order.
+
+        Resolution order within each phase:
+        1. Current player first
+        2. Board effects (if applicable to this phase)
+        3. Other players in turn order (clockwise)
+
+        Args:
+            phase: PowerPhase enum value
+            current_player: The player whose turn it is
+            play_by_play_lines: List to append play-by-play messages
+            context: Dict with phase-specific data (e.g., {'roll': 5, 'spaces': 3})
+
+        Returns:
+            Modified context dict (e.g., with updated 'roll' value)
+        """
+        context = context or {}
+
+        # PHASE 1: Current player's power (if they have this phase)
+        if phase in current_player.POWER_PHASES:
+            result = self._execute_phase_action(current_player, phase, current_player,
+                                               play_by_play_lines, context)
+            if result is not None:
+                # Update context with returned value (typically a modified roll)
+                if isinstance(result, int):
+                    context['roll'] = result
+                elif isinstance(result, dict):
+                    context.update(result)
+
+        # PHASE 2: Board effects (only for POST_MOVEMENT phase)
+        if phase == PowerPhase.POST_MOVEMENT:
+            if not current_player.finished and 0 <= current_player.position < self.board.length:
+                current_space = self.board.spaces[current_player.position]
+                current_space.on_enter(current_player, self, play_by_play_lines)
+
+        # PHASE 3: Other players in turn order
+        for player_index in self.turn_order:
+            other_player = self.players[player_index]
+            if other_player != current_player and phase in other_player.POWER_PHASES:
+                result = self._execute_phase_action(other_player, phase, current_player,
+                                                    play_by_play_lines, context)
+                if result is not None:
+                    if isinstance(result, int):
+                        context['roll'] = result
+                    elif isinstance(result, dict):
+                        context.update(result)
+
+        return context
+
+    def _execute_phase_action(self, power_owner, phase, current_player,
+                             play_by_play_lines, context):
+        """Execute the appropriate method for a character in this phase.
+
+        Args:
+            power_owner: The character whose power is executing
+            phase: The current PowerPhase
+            current_player: The player whose turn it is
+            play_by_play_lines: List for messages
+            context: Dict with phase data
+
+        Returns:
+            Result of the action (typically None or a modified roll value)
+        """
+        try:
+            if phase == PowerPhase.PRE_ROLL:
+                # Only current player executes pre-roll actions
+                if power_owner == current_player:
+                    return power_owner.pre_move_action(self, play_by_play_lines)
+
+            elif phase == PowerPhase.DIE_ROLL_TRIGGER:
+                # All players can react to a roll
+                return power_owner.trigger_on_main_move_roll(
+                    current_player, self, context.get('roll', 0), play_by_play_lines)
+
+            elif phase == PowerPhase.ROLL_MODIFICATION:
+                # All players can modify the current player's roll
+                if hasattr(power_owner, 'modify_other_roll'):
+                    return power_owner.modify_other_roll(
+                        current_player, self, play_by_play_lines, context.get('roll', 0))
+
+            elif phase == PowerPhase.MOVEMENT:
+                # Only current player moves (unless following via Suckerfish, etc.)
+                if power_owner == current_player:
+                    power_owner.move(self, play_by_play_lines, context.get('spaces', 0))
+
+            elif phase == PowerPhase.POST_MOVEMENT:
+                # This is handled separately for board effects in resolve_phase()
+                # Character-specific post-movement (like HugeBaby) happens here
+                # This triggers via on_another_player_move() from within move()
+                pass
+
+            elif phase == PowerPhase.OTHER_REACTIONS:
+                # This phase is for reactions that happen after movement completes
+                # Most are handled via on_another_player_move() called from within move()
+                # But some like Romantic need explicit handling
+                pass
+
+            elif phase == PowerPhase.POST_TURN:
+                # End-of-turn actions for all players
+                return power_owner.post_turn_actions(self, current_player, play_by_play_lines)
+
+        except Exception as e:
+            play_by_play_lines.append(
+                f"ERROR: {power_owner.name} ({power_owner.piece}) failed in {phase}: {str(e)}"
+            )
+            import traceback
+            traceback.print_exc()
+
+        return None
             
     def get_ability_statistics(self):
         """Returns a dictionary with ability activation counts for each character."""
