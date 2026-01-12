@@ -6,9 +6,13 @@ class Leaptoad(Character):
     """I skip Spaces with other racers on them when Moving."""
     def move(self, game, play_by_play_lines, spaces):
         """Move LeapToad, skipping occupied spaces, with recursion depth tracking."""
+        # Rule: "Move 0" does not count as moving and should not trigger abilities
+        if spaces == 0:
+            return
+
         # Import the logger for recursion tracking
         from debug_utils import log_recursion_state, logger
-        
+
         # Log state only when approaching recursion limits
         log_recursion_state(game, "leap move", self)
         
@@ -71,16 +75,21 @@ class Leaptoad(Character):
                 play_by_play_lines.append(
                     f"{self.name} ({self.piece}) moved from {original_position} to {self.position}"
                 )
-                
+
                 # Trigger board space effects
                 current_space = game.board.spaces[self.position]
                 current_space.on_enter(self, game, play_by_play_lines)
-            
+
+            # Detect and notify passed racers
+            passed_racers = self.detect_passes(game, original_position, self.position)
+            for passed_racer in passed_racers:
+                passed_racer.on_being_passed(self, game, play_by_play_lines)
+
             # Move Suckerfish before checking for another_player_move to avoid conflicts with Romantic etc
             for p in game.players:
                 if p.piece == "Suckerfish" and p != self:
                     p.move_with_another(self, spaces, game, play_by_play_lines)
-            
+
             # Notify other players about the movement
             for other_player in game.players:
                 if other_player != self:

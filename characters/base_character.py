@@ -25,8 +25,8 @@ class Character:
         self.last_roll = -1
         if self.tripped:
             self.tripped = False
-            play_by_play_lines.append(f"{self.name} ({self.piece}) is tripped and skips their turn.")
-            return
+            self.skip_main_move = True
+            play_by_play_lines.append(f"{self.name} ({self.piece}) is tripped and skips their main move.")
         self.pre_move_action(game, play_by_play_lines)
         if not self.skip_main_move:
             roll = self.main_roll(game, play_by_play_lines)
@@ -44,9 +44,10 @@ class Character:
             if not self.skip_main_move:
                 roll = self.modify_roll(game, play_by_play_lines, roll)
                 self.move(game, play_by_play_lines, roll)
-            if self.skip_main_move:
-                self.skip_main_move = False
         self.post_move_ability(game, play_by_play_lines)
+        # Reset skip_main_move flag at end of turn
+        if self.skip_main_move:
+            self.skip_main_move = False
 
     def pre_move_action(self, game, play_by_play_lines):
         pass
@@ -67,12 +68,16 @@ class Character:
     
     def move(self, game, play_by_play_lines, spaces): # If this is changed, also change Leaptoad
         """Move a character, with recursion depth tracking."""
+        # Rule: "Move 0" does not count as moving and should not trigger abilities
+        if spaces == 0:
+            return
+
         # Import the logger for recursion tracking
         from debug_utils import log_recursion_state, logger
-        
+
         # Log state only when approaching recursion limits
         log_recursion_state(game, "move", self)
-        
+
         # Guard against excessive recursion
         if game._recursion_depths['movement'] >= game._max_recursion_depth:
             play_by_play_lines.append(f"WARNING: Maximum movement recursion depth ({game._max_recursion_depth}) reached for {self.name} ({self.piece})! Stopping recursion.")
@@ -98,16 +103,21 @@ class Character:
                 play_by_play_lines.append(f"{self.name} ({self.piece}) moved from {self.previous_position} to {self.position} and finished!")
             else:
                 play_by_play_lines.append(f"{self.name} ({self.piece}) moved from {self.previous_position} to {self.position}")
-                
+
                 # Trigger board space effects
                 current_space = game.board.spaces[self.position]
                 current_space.on_enter(self, game, play_by_play_lines)
+
+            # Detect and notify passed racers
+            passed_racers = self.detect_passes(game, self.previous_position, self.position)
+            for passed_racer in passed_racers:
+                passed_racer.on_being_passed(self, game, play_by_play_lines)
 
             # Move Suckerfish before checking for on another_player_move to avoid conflicts
             for p in game.players:
                 if p.piece == "Suckerfish" and p != self:
                     p.move_with_another(self, spaces, game, play_by_play_lines)
-            
+
             # Notify other players about the movement
             for other_player in game.players:
                 if other_player != self:
@@ -125,6 +135,35 @@ class Character:
     def on_another_player_jump(self, jumped_player, game, play_by_play_lines):
         pass
 
+    def on_being_passed(self, passing_player, game, play_by_play_lines):
+        """Called when this character is passed by another character.
+
+        Rule: Passing occurs when a racer starts a Move behind this racer
+        and ends the same Move ahead of them.
+        """
+        pass
+
+    def detect_passes(self, game, start_position, end_position):
+        """Detect which racers were passed during a move from start to end position.
+
+        Rule: "Passing: When a racer starts a Move behind a racer and ends
+        the same Move ahead of them."
+
+        Returns: List of Character objects that were passed
+        """
+        passed_racers = []
+
+        for other in game.players:
+            if other != self and not other.finished:
+                # Check if we started behind and ended ahead
+                started_behind = start_position < other.position
+                ended_ahead = end_position > other.position
+
+                if started_behind and ended_ahead:
+                    passed_racers.append(other)
+
+        return passed_racers
+
     def trip(self, game, play_by_play_lines):
         self.tripped = True
 
@@ -132,22 +171,22 @@ class Character:
         """Jump/warp a character to a position, with recursion depth tracking."""
         # Import the logger for recursion tracking
         from debug_utils import log_recursion_state, logger
-        
+
         # Log state only when approaching recursion limits
         log_recursion_state(game, "jump", self)
-        
+
         # Guard against excessive recursion
         if game._recursion_depths['movement'] >= game._max_recursion_depth:
             play_by_play_lines.append(f"WARNING: Maximum jump recursion depth ({game._max_recursion_depth}) reached for {self.name} ({self.piece})! Stopping recursion.")
-            
+
             # Log critical info about the recursion only when it happens
             position_info = f"from={self.position}, to={position}"
             logger.error(f"Jump recursion limit reached for {self.name} ({self.piece}) at {position_info}")
             return
-        
+
         # Increment recursion counter
         game._recursion_depths['movement'] += 1
-        
+
         try:
             self.previous_position = self.position
             self.position = position
@@ -158,7 +197,7 @@ class Character:
                 play_by_play_lines.append(f"{self.name} ({self.piece}) jumped from {self.previous_position} to {self.position} and finished!")
             else:
                 play_by_play_lines.append(f"{self.name} ({self.piece}) jumped from {self.previous_position} to {self.position}")
-                
+
                 # Trigger board space effects
                 current_space = game.board.spaces[self.position]
                 current_space.on_enter(self, game, play_by_play_lines)
@@ -170,6 +209,31 @@ class Character:
         finally:
             # Decrement recursion counter
             game._recursion_depths['movement'] -= 1
+
+    def swap_positions(self, other_player, game, play_by_play_lines):
+        """Swap positions with another player.
+
+        Rule: Swapping does NOT count as Moving, but does trigger warp/jump effects.
+        Both players exchange positions simultaneously.
+        """
+        if other_player.finished or self.finished:
+            play_by_play_lines.append(f"Cannot swap with finished player.")
+            return
+
+        # Store positions before swap
+        temp_position = self.position
+        other_position = other_player.position
+
+        # Log the swap
+        play_by_play_lines.append(
+            f"{self.name} ({self.piece}) and {other_player.name} ({other_player.piece}) "
+            f"swapped positions (space {temp_position} <-> space {other_position})"
+        )
+
+        # Perform the swap by jumping both players
+        # Note: We jump to temp positions to avoid triggering mid-swap effects
+        self.jump(game, other_position, play_by_play_lines)
+        other_player.jump(game, temp_position, play_by_play_lines)
 
     def check_for_share_space(self, game):
         space_mates = []
