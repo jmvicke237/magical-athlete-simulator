@@ -1,0 +1,302 @@
+# Magical Athlete Rules
+
+## Game Overview
+
+Magical Athlete is a roll and move game about racing wacky characters around a track. Just roll a die, move your racer, and try to finish first. But all the racers have wacky, game changing abilities. Race four times with a different racer each time. The player with the most points after four races wins.
+
+## Stats
+
+* 2-5 players
+* 45 minutes
+
+## Components
+
+* 1 double-sided board (Mild Mile on one side and Wild Wilds on the other)
+* 6 D6 dice
+* 36 racer figurines
+* 36 racer cards
+* 4 gold 1st place chips (with values 3, 4, 4, 5)
+* 4 silver 2nd place chips (with values 1, 2, 2, 3)
+* 9 bronze 3 points chips
+* 16 bronze 1 point chips
+* 1 rulebook
+
+## Setup
+
+1. Put the racetrack in the middle of the table, Mild Mile side up.
+2. Dump out the bag of point chips. Stack the gold trophy and silver rosette point chips in order, biggest on the bottom.
+3. Keep the shuffled racer deck nearby.
+4. Dump out the bag of racers.
+5. Give everyone a die.
+
+## Recruitment
+
+To start, everyone drafts a team of 4 racers that they'll use of the entire game, one racer per race.
+
+If playing with 3-6 players, put out cards from the racer deck equal to double the number of players. So if you have 4 players, put out a set of 8 racer cards face up.
+
+If racing with only 2 players, see 2-player rules below.
+
+Now roll off! Everyone rolls their die. Whoever rolls highest drafts first. If there's a tie, the player with the next highest roll drafts first. If everyone ties, preroll.
+
+Going clockwise, everyone picks a racer. When the last player picks, reverse the draft order: the last player picks a second racer, and now go counterclockwise until everyone has two racers. That's right, it's a snake draft.
+
+Repeat this process, starting with the player to the left of the start player, that's right, it's a second snake draft. Now everybody has 4 racers total.
+
+## Race
+
+Before the first race, roll off exactly like you did for the draft. Whoever wins goes first. Everyone picks a racer card from their hand and reveals it at the same time. You can only use each racer once, and later races are worth more points, so you might want tot save your best racers for the end. Everyone takes their racer token from the pile and puts it onto the Start space.
+
+Races are simple: players take turns rolling their dice, moving their racers, and watching the chaos unfold as powers trigger.
+
+On your turn, roll your die and move that many places on the track. That's called your Main Move. A lot of powers trigger off the Main Move specifically, so keep an eye out for that wording, since racers can move in lots of other ways than their Main Move.
+
+After a player finish their turn, the next player goes in clockwise order. Keep going until two racers cross the finish line. The first across takes 1st place, and when the second across takes 2nd place, the race ends immediately.
+
+If a power says you "can" use it, it's optional. All other powers are mandatory.
+
+A racer's power can take effect when a player chooses to use it, when a trigger occurs, or just passively. If multiple powers need to take effect at the same time, they activate in this order:
+
+1. Racetrack spaces
+2. Current player
+3. Other player powers, in player order (clockwise around the table)
+
+After a player finishes their turn, the next player goes in clockwise order. Repeat, until 2 racers cross the finish line, ending the race!
+
+Example Turn:
+
+It’s the Romantic’s turn, and they roll a 5 for their main move. While they move 5 spaces,they pass Scoocher and Banana. Banana’s power is to trip any racer that passes them, so after the Romantic finishes their full main move, they trip! That means they skip their next main move. Scoocher is thrilled, because their power is moving 1 whenever anyone’s ability happens. So they move 1 and stop on the same space as Banana. Now the Romantic is thrilled, because their ability is that when exactly 2 racers are stopped on a space, they get to move 2. Even though they’re tripped, they can still use their power. Of course, since another power is triggered, Scoocher moves another 1.
+
+## End of race
+
+Immediately as the second racer crosses the finish line, the race ends! 
+
+The 1st place racer takes the top gold chip from the pile. The 2nd place racer takes the top silver chip.
+
+Then:
+1. Take all the cards and racer tokens from there ace and put them out of play.
+2. Flip the tray over to the other side. You'll race on each track twice per game: Mild, Wild, Mild, Wild. If you prefer, you can race all on a single track, or change the schedule to your liking. Just decide before you start the game so you can strategize around it.
+3. Everyone simultaneously reveals the new racer card and puts that racer token on the Start space. The player with farthest behind (or first eliminated) racer in the last race goes first in the next race. If there's a tie, roll off!
+
+## Final scoring
+
+When the fourth race is over, the game ends. Whoever has the most points wins! 
+
+If there's a tie, there's a tie.
+
+## 2 Player Variant
+
+The rules are the same except...
+
+* Recruiting: Make a line of 8 faces racers from the deck and snake draft them (Players A and B would have a draft order like this: ABBAABBA) Do it again with 8 more racers from the deck in reverse order, until both players have 8 racers (16 total between you both).
+
+* Preparing: Both players simultaneously pick 2 different racers for each race, so 4 racers will be on the track to start. Each player also takes two dice to use for their different racers.
+
+* Racing: On each player's first turn, they pick one racer to use. Then in all subsequent turns, you use each of your racers in the order you want, making sure to fully complete one racer before moving onto the next. After the first race, the player who received the lower number of points in the last race goes first. If tied, roll off! If you have racer powers that trigger when "other racers" do something, that includes your other racer.
+
+## 3 Player Double Racer Variant
+
+The rules are the same, except...
+
+* Recruiting: Make a line of 6 faces racers from the deck and snake draft them like normal. Do that 4 times, rotating who drafts first. Everyone should have 8 racers after this.
+
+* Preparing: All players simultaneously pick 2 different racers for each race, so 6 racers will be on the track to start. Each player also takes two dice to use for their different racers.
+
+* Racing: During your turn, you move both of your racers in the order you want, making sure to fully complete one racer before moving onto the next. If you have racer powers that trigger when "other racers" do something, that includes your other racer.
+
+
+## Defined Terms
+
+* **Ahead/Behind:** Racers are ahead of another racer if they're stopped on a space closer to the finish line. Racers are behind another racer if they are stopped on a. Space closer to the Start space. If racers share a space, they're neither ahead nor behind each other.
+
+* **Alone:** When a racer isn't sharing their space. 
+
+* **Lead:** The racer(s) currently closest tot eh finish line. This doesn't count racers who have already crossed the finish line.
+
+* **Main Move:** The action you always get on your turn, where you roll your die and move that many spaces.
+
+* **Move:** When a racer changes spaces from their Main Move, powers, or any other situation that specifically use the word "move". If a racer ever needs to "move 0", that doesn't count as moving for the purposes of triggering other powers based on movement.
+
+* **Passing:** When a racer starts a move behind a racer and ends the same move ahead of them. 
+
+* **Sharing a space:** Racers are "on" a space with another racer when both are currently stopped on that space. In other words, if racers temporarily occupy the same space of the course of moving, warping, etc. - that doesn't count..
+
+* **Sopping on a space:** Racers are stoped on a space after they've finished moving onto it, or otherwise arriving there by other means, like through Flip Flop's warping power.
+
+* **Trip:** A tripped racer skips their next Main Move. You don't even Rolle your die, though your powers can still trigger and you can still move in other ways. When you trip, finish your move completely, then lay your racer token face down. On your next turn, put your token back upright to indicate you've recovered. And remember: tripping doesn't end your current move prematurely.
+
+* **Warp:** When a racer warps, put their token out eh new space, but don't count it as "moving" for triggering power, passing racers, etc.
+
+## Wild Wilds Track
+
+* **Arrows:** When you stop on a space with an arrow, move the number of spaces shown in the arrow's direction. This counts as a separate move than how you got there, and never part of your main move, if that matters. The Arrows on the following spaces:
+Space 5 = Move +3 arrow
+Space 14 = Move -4 arrow
+Space 20 = Move +2 arrow
+Space 21 = Move -2 arrow
+
+* **Trip:** When you stop on a space with a rock, you trip. The Trips are on Spaces 3 and 15
+
+* **Star:** When you stop on s pace with a star, take a bronze 1 point chip. The Stars are on Spaces 1, 11, and 24
+
+
+## Fiddly Details:
+
+* If you reroll for any reason, treat the prior roll as never having happened. It doesn't have any effect not the game, like triggering powers.
+* The Start space is a space.
+* Powers related to stopping on s space together still trigger if a racers arrive at the same time. For example, if Suckerfish moves with Romantic, it triggers Romantic again (yes, this can mean they go all the way to finish line together if nothing interrupts this cycle).
+* "Moving 0" doesn't count as moving.
+* Racer powers that happen at a specific time, like "Before my main move", only happen once per turn.
+* Racer powers deactivate after they win or otherwise leave the race, unless otherwise stated.
+* If anything says you can preroll a die, that's only the most recent die you've rolled.
+* If you run into an infinite loop - for example, Scoocher stopping on the Huge Baby - complete the loop once in the order it takes place, then end it. Note that some powers can interact many times, like Scoocher and Suckerfish, which doesn't count as a loop. You can keep doing those.
+
+## Racer Abilities
+
+Below are the racer abilities, some flavor text, and some rules clarifications.
+
+* **Alchemist:** When I roll a 1 or 2 for my Main Move, I can move 4 instead.
+	* Ability name: Transmute 'N' Scoot
+	* Flavor: "Forever Seeking the ancient secret of turning This into That."
+* **Baba Yaga:** Trip any racer that stops on my space, or when I stop on their space.
+	* Ability name: Leg It
+	* Flavor: "This property is going fast."
+	* Clarifications: If I share a space with the Duelist, we can duel, but the Duelist will still trip. The Hypnotist can cast their spell on me, but they still trip.
+* **Banana:** I trip any racer that passes me.
+	* Ability name: The Slip
+	* Flavor: "No more edible than you or I."
+* **Blimp:** When I start my turn before the second corner of the track, I get +3 to my Main Move. On or after that corner, I get -1.
+	* Ability name: Blow It
+	* Flavor: "Built to fly, born to explode."
+* **Centaur:** When I pass a racer, they move -2.
+	* Ability name: Hoofwhack
+	* Flavor: "Here's the kicker."
+	* Clarifications: A racer can't be hoofwhacked any farther back than the Start space.
+* **Cheerleader:** Before my Main Move, I can make the racer(s) in last place move 2. If I do, I move 1.
+	* Ability name: Rahrah
+	* Flavor: "A being of pure pep."
+	* Clarifications: If there is more than one racer in the last place, you have to cheer for all of them. You only move +1 regardless of many racers are in last place. If you cheer yourself, those are two separate moves: move 2 then move 1.
+* **Coach:** Everyone on my space gets +1 to their Main Move, including me.
+	* Ability name: Good Hustle
+	* Flavor: "Believing in yourself is even more important when you are some kind of lizard."
+	* Clarifications: Remember that I get my power's benefit too!
+* **Copycat:** I have the power of the racer currently in the lead. If there's a tie, I pick.
+	* Ability name: Copy That
+	* Flavor: "Very similar to another, different cat."
+	* Clarifications: I persistently have the power of the lead racer, not just on my turn. If there's ever a contradiction between me and r cer I'm copying - like with Huge Baby - their power takes priority. I never copy "before my race" powers.
+* **Dicemonger:** Anyone can reroll their Main Move once per turn. When another racer does it, I move 1.
+	* Ability name: Dicey Deals
+	* Flavor: "He picked his career from a d100 table."
+* **Duelist:** Whenever a racer shares my space, I can should "Duel". We roll our dice and whoever rolls highest moves 2. I win ties.
+	* Ability name: Duel!
+	* Flavor: "When you've got a rapier, everything looks like a duel.
+	* Clarifications: I can duel multiple times during a turn, including when it's not my turn. I just need to be sharing a space to declare a duel. I can't interrupt actions in progress, like between a roll and a move.
+* **Egg:** Before my race, draw 2 new racers from the deck and pick one. I have its powers.
+	* Ability name: Scramble
+	* Flavor: "You should see the chicken."
+	* Clarifications: You should still use my racer token. I still get any "before race" powers.
+* **Flip Flop:** I can skip rolling for my main move and swap spaces with another racer instead.
+	* Ability name: Flop Flip
+	* Flavor: "Ever searching for its lost twin."
+	* Clarifications: My flip flop is a warp: it doesn't count as a move and I don't roll. I never occupy the same space as a racer I switch places with. We flop flip simultaneously.
+* **Genius:** I can guess what I'll roll for my Main Move. If I'm right, I take another turn after this one.
+	* Ability name: Think Good
+	* Flavor: "And yet a fool in the ways of love."
+* **Gunk:** Other racers get -1 to their Main Move.
+	* Ability name: Goop 'Em
+	* Flavor: "A bit of a hugger."
+	* Clarifications: My goop reduces the move amount, not the die roll number. So it doesn't make a 6 into a 5 and keep the Lacky from doing their job.
+* **Hare:** I get +2 to my Main Move. When I start my turn along in the lead, I skip my Main Move.
+	* Ability name: Hubris
+	* Flavor: "The only thing he can't outrun is hubris."
+* **Heckler:** When a racer ends their turn within 1 space of where they started, I move 2.
+	* Ability name: Schadenfreude
+	* Flavor: "It's constructive criticism."
+	* Clarifications: My powers work for racers recovering from tripping.
+* **Huge Baby:** No one can ever be on my space besides the Start. Whenever that would happen, put the racer on the space behind me instead.
+	* Ability name: Really Huge
+	* Flavor: "She's 30."
+	* Clarifications: I'm a unique case: when other racers are put behind me because of my power, that doesn't count as a move: it's like they just stopped on that space instead.
+* **Hypnotist:** Before my Main Move, I can warp a racer to my space.
+	* Ability name: Hsssst
+	* Flavor: "Implanted this false bio himself."
+* **Inchworm:** When another racer rolls a 1 for their Main Move, they skip that move move and I move 1.
+	* Ability name: Wriggle
+	* Flavor: "Giver her an inch and she'll take an inch.
+	* Clarifications: If another racer rolls a 1 and the Skipper is all on the track with me, I wriggle 1 and then the Skipper takes their turn.
+* **Lackey:** When another racer rolls a 6 for their Main Move, I Move 2 before they Move.
+	* Ability name: Very Good Sire
+	* Flavor: "If you're happy, he's happy."
+* **Leaptoad:** While moving, I skip spaces with other racers on them.
+	* Ability name: Jumpfrog
+	* Flavor: "Frequently seen from below."
+* **Legs:** I can skip rolling for my Main Move and move 5 instead.
+	* Ability name: Jog
+	* Flavor: "Has arms, too, but who cares."
+	* Clarifications: My power counts as my main move, so can be goaded by Gunk or get the hustle bonus from Coach.
+* **Lovable Loser:** Before my Main Move, I get 1 bronze point point chip if I'm alone in last place.
+	* Ability name: D'aww
+	* Flavor: "Top of her class at Loser Academy. Which is bad.
+* **Magician:** I can reroll my Main Move up to twice per turn.
+	* Ability name: Poof
+	* Flavor: "He can also cast fireball."
+	* Clarifications: I must use whatever my last roll is.
+* **Mastermind:** At the start of my first turn, I predict which racer will win. If I'm right, the race ends immediately and I finish 2nd.
+	* Ability name: Know-It-All
+	* Flavor: "The one scheme he can't pull off is getting his parents back together."
+	* Clarifications: If I predict myself, I can win both 1st and 2nd.
+* **M.O.U.T.H.:** When I stop on a space with exactly one other racer, they're eliminated from the race.
+	* Ability name: Chomp
+	* Flavor: "Mastication Orifice Utilized Toward Hunger"
+	* Clarifications: If I chomp so many racers that no one crosses the finish line second, no one gets those points and you can discard that race's silver rosette.
+* **Party Animal:** Before my Main Move, all racers move a space towards me. Each other racer on my space gives me +1 to my Main Move.
+	* Ability name: Animal Magnetism
+	* Flavor: "They put a hat on an animal and this happened."
+	* Clarifications: If Huge Baby parties onto my space, everyone there gets put 1 space back.
+* **Rocket Scientist:** When I roll for my Main Move, I can double that number. If I do, I trip.
+	* Ability name: Kablooey
+	* Flavor: "Moonlights as a brain surgeon."
+	* Clarifications: I roll then decide whether to kablooey.
+* **Romantic:** When anyone stops on a space with exactly one other racer, I Move 2.
+	* Ability name: Ah, Love!
+	* Flavor: "The last of her species."
+	* Clarifications: If two racers move together, like with the Suckerfish, my power triggers twice, once for each racer.
+* **Scoocher:** When another racer's power happens, I move 1.
+	* Ability name: Scooch Scooch
+	* Flavor: "Ope, just gonna smooch by you there."
+	* Clarifications: When Gunk is on the board, I scooch 1 for ever -1 that affects a racer's Main Move. With Dicemonger, I move for each preroll. With Leaptoad, I move from each space skipped. If they jump frog over 2 consecutive spaces, I move 1 twice. I scooch 1 on each Magician reroll even it's not used.
+* **Sisyphus:** Before my race, I take 4 bronze point chips. When I roll a 6 for my Main Move, instead of moving, I warp to the Start and lose 1 point chip.
+	* Ability name: Keep Rollin'
+	* Flavor: "Stays humble, keeps grinding."
+* **The Skipper:** When anyone rolls a 1 for their Main Move, I go next in turn order.
+	* Ability name: Salty Dog
+	* Flavor: "The wheel is fake, he just goes forward like everyone else."
+	* Clarifications: After I go, turn order continues to my left. (Unless I roll a 1 and go again!)
+* **Stickler:** Other racers can only cross the finish line by moving the exact amount they need. If they overshoot, they don't move.
+	* Ability name: Actually...
+	* Flavor: "Proofread this rulebook without asking."
+	* Clarifications: This includes any movement from Main Moves, powers, etc. For example, if the Duelist wins a duel on the final space before the finish line, they don't cross.
+* **Suckerfish:** When a racer on my space moves, I can move to their new space.
+	* Ability name: Sucker!
+	* Flavor: "Has abandonment issues."
+	* Clarifications: If I start moving with a racer, I can't stop until they finish that move. I can cross the finish line using my power. (I cross after the racer I'm attached to.)
+* **Third Wheel:** Before my Main Move, I can warp to any space with exactly 2 racers on it.
+	* Ability name: Roll Through
+	* Flavor: "Searching for her throther half."
+	* Clarifications: I still get my main move after warping.
+* **Twin:** Before my race, I can pick a racer who won a previous race and race with their powers.
+	* Ability name: Double Dip
+	* Flavor: "Not related to anyone, just identical to everyone."
+	* Clarifications: You should still use my racer token. I still get any "before race" powers.
+
+## Credits
+Original Game Design: Takashi Ishida
+Updated Game Design: Richard Garfield
+Creative Director: Alex Hague
+Art: Angela Kirkwood
+Graphic Design: Elizabeth Goodspeed, Janet Delavan
+Additional Design and Development: Skaff Elias, James Nathan Spencer, Justin Vickers
+Lead Writer: Sophie Abromowitz
+Publisher: CMYK
+Manufacturer: Strom MFG
+Thanks: Misty Hatchard, Bryan Bornmueller, Ted Werner, and the Magical Athlete platesting community

@@ -13,7 +13,7 @@ class Blimp(Character):
             modified_roll = roll + 3
             play_by_play_lines.append(f"{self.name} ({self.piece}) gets +2 to their roll (before corner). Roll: {roll} -> {modified_roll}")
         else:
-            modified_roll = max(1, roll - 1)
+            modified_roll = max(1, roll - 2)
             play_by_play_lines.append(f"{self.name} ({self.piece}) gets -1 to their roll (on or after corner). Roll: {roll} -> {modified_roll}")
         
         for other_player in game.players:
