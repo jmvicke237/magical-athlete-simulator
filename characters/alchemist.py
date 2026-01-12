@@ -1,8 +1,12 @@
 # characters/alchemist.py
 
 from .base_character import Character
+from power_system import PowerPhase
 
 class Alchemist(Character):
+    """When I roll a 1 or 2 for my main move, I can move 4 instead."""
+
+    POWER_PHASES = {PowerPhase.ROLL_MODIFICATION}
     def __init__(self, name, piece):
         super().__init__(name, piece)
         self.power_triggered = False    

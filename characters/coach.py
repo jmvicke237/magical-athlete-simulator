@@ -1,8 +1,12 @@
 # characters/coach.py
 
 from .base_character import Character
+from power_system import PowerPhase
 
 class Coach(Character):
+    """Everyone on my space get +1 to their main move, including me."""
+
+    POWER_PHASES = {PowerPhase.ROLL_MODIFICATION}
     def __init__(self, name, piece):
         super().__init__(name, piece)
 

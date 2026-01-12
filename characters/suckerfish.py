@@ -3,6 +3,8 @@
 from .base_character import Character
 
 class Suckerfish(Character):
+
+    POWER_PHASES = set()
     def __init__(self, name, piece):
         super().__init__(name, piece)
         self._movement_count = 0  # Track movements to prevent loops

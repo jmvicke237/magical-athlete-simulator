@@ -1,8 +1,12 @@
 # lovableloser.py
 
 from .base_character import Character
+from power_system import PowerPhase
 
 class LoveableLoser(Character):
+    """At the start of my turn, I get a bronze point chip if I'm alone in last place."""
+
+    POWER_PHASES = {PowerPhase.PRE_ROLL}
     def __init__(self, name, piece):
         super().__init__(name, piece)
         self.bronze_chips = 0

@@ -1,8 +1,12 @@
 # characters/duelist.py
 
 from .base_character import Character
+from power_system import PowerPhase
 
 class Duelist(Character):
+    """Whenever a racer shares my space, I can shout DUEL! We roll dice and whoever rolls highest moves 2."""
+
+    POWER_PHASES = {PowerPhase.POST_TURN}
     def __init__(self, name, piece):
         super().__init__(name, piece)
 

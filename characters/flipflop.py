@@ -3,6 +3,8 @@
 from .base_character import Character
 
 class FlipFlop(Character):
+
+    POWER_PHASES = set()
     def pre_move_action(self, game, play_by_play_lines):
         """
         FlipFlop swaps places with the furthest player who is at least 4 spaces ahead.

@@ -1,8 +1,12 @@
 # hare.py
 
 from .base_character import Character
+from power_system import PowerPhase
 
 class Hare(Character):
+    """I get +2 to my main move. When I start my turn alone in the lead, I skip my move and get a bronze chip."""
+
+    POWER_PHASES = {PowerPhase.PRE_ROLL, PowerPhase.ROLL_MODIFICATION}
     def __init__(self, name, piece):
         super().__init__(name, piece)
         self.bronze_chips = 0 #this is placeholder since we haven't implemented points yet

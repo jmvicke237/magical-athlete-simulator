@@ -4,6 +4,8 @@ from .base_character import Character
 import random
 
 class Magician(Character):
+
+    POWER_PHASES = set()
     def __init__(self, name, piece):
         super().__init__(name, piece)
 

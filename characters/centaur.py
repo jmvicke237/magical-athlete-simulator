@@ -5,6 +5,8 @@ from .base_character import Character
 class Centaur(Character):
     """When I pass a racer, they move -2."""
 
+
+    POWER_PHASES = set()
     def __init__(self, name, piece):
         super().__init__(name, piece)
 

@@ -3,6 +3,8 @@
 from .base_character import Character
 
 class HugeBaby(Character):
+
+    POWER_PHASES = set()
     def __init__(self, name, piece):
         super().__init__(name, piece)
         # Dictionary to track player interactions with HugeBaby to prevent infinite loops

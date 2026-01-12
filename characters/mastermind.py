@@ -3,6 +3,8 @@
 from .base_character import Character
 
 class Mastermind(Character):
+
+    POWER_PHASES = set()
     def __init__(self, name, piece):
         super().__init__(name, piece)
         self.prediction = None  # Who the Mastermind predicts will win

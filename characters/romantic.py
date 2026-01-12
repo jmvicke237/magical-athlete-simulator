@@ -1,6 +1,9 @@
 from .base_character import Character
+from power_system import PowerPhase
 
-"""Moves 3 spaces when any player Stops on a Space with exactly one other racer."""
+"""Moves 3 spaces when any player Stops on a Space with exactly one other ra
+    POWER_PHASES = {PowerPhase.OTHER_REACTIONS}
+cer."""
 
 class Romantic(Character):
     def __init__(self, name, piece):

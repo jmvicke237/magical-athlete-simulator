@@ -3,6 +3,9 @@
 from .base_character import Character
 
 class MOUTH(Character): #I fixed the class to be correct.
+
+    POWER_PHASES = set()
+
     def move(self, game, play_by_play_lines, spaces):
         super().move(game, play_by_play_lines, spaces)
         self._check_and_eliminate(game, play_by_play_lines)

@@ -4,6 +4,8 @@ from .base_character import Character
 
 class Leaptoad(Character):
     """I skip Spaces with other racers on them when Moving."""
+
+    POWER_PHASES = set()
     def move(self, game, play_by_play_lines, spaces):
         """Move LeapToad, skipping occupied spaces, with recursion depth tracking."""
         # Rule: "Move 0" does not count as moving and should not trigger abilities

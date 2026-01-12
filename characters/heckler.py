@@ -3,6 +3,8 @@
 from .base_character import Character
 
 class Heckler(Character):
+
+    POWER_PHASES = set()
     def post_turn_actions(self, game, other_player, play_by_play_lines):
         """Heckler moves 2 if another player ends their turn near their starting space."""
         distance = abs(other_player.turn_start_position - other_player.position)

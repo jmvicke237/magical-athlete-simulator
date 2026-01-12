@@ -1,8 +1,13 @@
 # gunk.py
 
 from .base_character import Character
+from power_system import PowerPhase
 
 class Gunk(Character):
+    """Other racers get -1 to their main move."""
+
+    POWER_PHASES = {PowerPhase.ROLL_MODIFICATION}
+
     def modify_other_roll(self, other_player, game, play_by_play_lines, roll):
         """Gunk reduces other players' rolls by 1."""
         if other_player != self:  # Don't modify Gunk's own roll

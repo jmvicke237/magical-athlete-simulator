@@ -1,8 +1,12 @@
 # characters/blimp.py
 
 from .base_character import Character
+from power_system import PowerPhase
 
 class Blimp(Character):
+    """When I start my turn before the second corner, I get +2. On or after that corner, I get -2."""
+
+    POWER_PHASES = {PowerPhase.ROLL_MODIFICATION}
     def __init__(self, name, piece):
         super().__init__(name, piece)
 
