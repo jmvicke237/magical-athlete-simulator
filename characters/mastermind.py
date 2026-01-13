@@ -24,15 +24,26 @@ class Mastermind(Character):
 
     def check_prediction(self, game, play_by_play_lines):
         """Checks if the prediction is correct when the game ends."""
-        if self.has_made_prediction and len(game.finished_players) > 0 and game.finished_players[0] == self.prediction:
+        # Only check if prediction was made and first place has finished
+        if not self.has_made_prediction or len(game.finished_players) == 0:
+            return False
+
+        # If prediction is correct and we haven't already finished
+        if game.finished_players[0] == self.prediction and not self.finished:
+            # Mastermind finishes in 2nd place
+            self.finished = True
             self.bronze_chips += 4
+            game.finished_players.append(self)
             play_by_play_lines.append(
-                f"{self.name} ({self.piece})'s prediction was correct! They receive 4 bronze chips, ending the race early."
+                f"{self.name} ({self.piece})'s prediction was correct! They finish in 2nd place and receive 4 bronze chips, ending the race early."
             )
             return True
-        else:
-            if len(game.finished_players) > 0:
-                play_by_play_lines.append(
-                    f"{self.name} ({self.piece})'s prediction was INCORRECT! The winner was actually {game.finished_players[0].name} ({game.finished_players[0].piece})."
-                )
-            return False #Tell everyone that it was not True, so the loop can keep on going.
+
+        # If first place is decided and prediction was wrong, report it once
+        elif game.finished_players[0] != self.prediction and not self.finished:
+            play_by_play_lines.append(
+                f"{self.name} ({self.piece})'s prediction was INCORRECT! The winner was actually {game.finished_players[0].name} ({game.finished_players[0].piece})."
+            )
+            return False
+
+        return False
