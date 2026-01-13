@@ -25,31 +25,47 @@ with tab1:
     
     if st.button("Run Simulations"):
         with st.spinner("Running simulations..."):
-            average_turns, average_finish_positions, _, complete_logs = run_simulations(
-                num_simulations, num_racers, selected_chars, random_turn_order=True
+            # run_simulations now returns 7 values after Phase 2 refactoring
+            average_turns, average_finish_positions, all_play_by_play, average_ability_activations, appearance_count, average_chip_stats, board_type_counts = run_simulations(
+                num_simulations, num_racers, board_type='Random', fixed_characters=selected_chars, random_turn_order=True
             )
             
             st.success(f"Completed {num_simulations} simulations!")
             st.write(f"Average turns per race: {average_turns:.2f}")
-            
+
+            # Show board type usage
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Mild Board Races", board_type_counts.get('Mild', 0))
+            with col2:
+                st.metric("Wild Board Races", board_type_counts.get('Wild', 0))
+
             # Show character performance
             st.subheader("Character Performance")
-            
+
             # Convert to DataFrame for easy display
             char_data = []
             for char, avg_pos in average_finish_positions.items():
-                if avg_pos is not None:
-                    char_data.append({"Character": char, "Avg Position": avg_pos})
-            
+                if avg_pos is not None and appearance_count.get(char, 0) > 0:
+                    char_data.append({
+                        "Character": char,
+                        "Avg Position": avg_pos,
+                        "Avg Abilities": average_ability_activations.get(char, 0),
+                        "Avg Points": average_chip_stats.get(char, {}).get('points_avg', 0),
+                        "Races": appearance_count.get(char, 0)
+                    })
+
             df = pd.DataFrame(char_data)
             df = df.sort_values("Avg Position")
-            
-            st.dataframe(df)
-            
-            # Show sample log
+
+            st.dataframe(df, use_container_width=True)
+
+            # Show sample log from all_play_by_play
             st.subheader("Sample Play-by-Play")
-            if complete_logs:
-                st.text_area("First Simulation", complete_logs[0], height=400)
+            if all_play_by_play:
+                # all_play_by_play is a list of lines, show first 50
+                sample_log = '\n'.join(all_play_by_play[:50])
+                st.text_area("First Race Details", sample_log, height=400)
 
 with tab2:
     st.header("Character Statistics")

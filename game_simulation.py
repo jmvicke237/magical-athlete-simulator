@@ -192,8 +192,9 @@ class Game:
         """
         context = context or {}
 
-        # PHASE 1: Current player's power (if they have this phase)
-        if phase in current_player.POWER_PHASES:
+        # PHASE 1: Current player's power
+        # Always execute MOVEMENT phase (core mechanic), otherwise check POWER_PHASES
+        if phase == PowerPhase.MOVEMENT or phase in current_player.POWER_PHASES:
             result = self._execute_phase_action(current_player, phase, current_player,
                                                play_by_play_lines, context)
             if result is not None:
@@ -212,6 +213,8 @@ class Game:
         # PHASE 3: Other players in turn order
         for player_index in self.turn_order:
             other_player = self.players[player_index]
+            # Other players participate if they have this phase declared
+            # (e.g., Gunk modifying rolls, Inchworm reacting to die rolls)
             if other_player != current_player and phase in other_player.POWER_PHASES:
                 result = self._execute_phase_action(other_player, phase, current_player,
                                                     play_by_play_lines, context)
