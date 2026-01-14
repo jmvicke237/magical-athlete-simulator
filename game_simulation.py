@@ -240,9 +240,9 @@ class Game:
     def resolve_phase(self, phase, current_player, play_by_play_lines, context=None):
         """Resolve all powers in a specific phase following official rules order.
 
-        Resolution order within each phase:
-        1. Current player first
-        2. Board effects (if applicable to this phase)
+        Resolution order within each phase (per official rules):
+        1. Racetrack spaces (board effects)
+        2. Current player
         3. Other players in turn order (clockwise)
 
         Args:
@@ -256,7 +256,17 @@ class Game:
         """
         context = context or {}
 
-        # PHASE 1: Current player's power
+        # STEP 1: Board effects (Racetrack spaces) - only for POST_MOVEMENT phase
+        # Note: Most board effects happen via on_enter() in move() method during MOVEMENT phase
+        # This is here for any board effects that need to use the phase system
+        if phase == PowerPhase.POST_MOVEMENT:
+            if not current_player.finished and 0 <= current_player.position < self.board.length:
+                current_space = self.board.spaces[current_player.position]
+                # Note: on_enter() was already called during move(), so we don't call it again here
+                # This step is reserved for future board effects that might use the phase system
+                pass
+
+        # STEP 2: Current player's power
         # Always execute MOVEMENT phase (core mechanic), otherwise check POWER_PHASES
         if phase == PowerPhase.MOVEMENT or phase in current_player.POWER_PHASES:
             result = self._execute_phase_action(current_player, phase, current_player,
@@ -268,13 +278,7 @@ class Game:
                 elif isinstance(result, dict):
                     context.update(result)
 
-        # PHASE 2: Board effects (only for POST_MOVEMENT phase)
-        if phase == PowerPhase.POST_MOVEMENT:
-            if not current_player.finished and 0 <= current_player.position < self.board.length:
-                current_space = self.board.spaces[current_player.position]
-                current_space.on_enter(current_player, self, play_by_play_lines)
-
-        # PHASE 3: Other players in turn order
+        # STEP 3: Other players in turn order (clockwise)
         for player_index in self.turn_order:
             other_player = self.players[player_index]
             # Other players participate if they have this phase declared
