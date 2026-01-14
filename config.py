@@ -19,7 +19,6 @@ from characters.partyanimal import PartyAnimal
 from characters.flipflop import FlipFlop
 from characters.skipper import Skipper
 from characters.genius import Genius
-from characters.boogeyman import Boogeyman
 from characters.suckerfish import Suckerfish
 from characters.hypnotist import Hypnotist
 from characters.banana import Banana
@@ -34,12 +33,13 @@ from characters.hare import Hare
 from characters.coach import Coach
 from characters.blimp import Blimp
 from characters.rocketscientist import RocketScientist
-from characters.clowncar import ClownCar
 from characters.egg import Egg
 from characters.loveableloser import LoveableLoser
 from characters.twin import Twin
 from characters.thirdwheel import ThirdWheel
-from characters.sisyphis import Sisyphis
+from characters.sisyphus import Sisyphus
+from characters.copycat import Copycat
+from characters.stickler import Stickler
 
 character_abilities = {
     "HugeBaby": HugeBaby,
@@ -58,7 +58,6 @@ character_abilities = {
     "FlipFlop": FlipFlop,
     "Skipper": Skipper,
     "Genius": Genius,
-    "Boogeyman": Boogeyman,
     "Suckerfish": Suckerfish,
     "Hypnotist": Hypnotist,
     "Banana": Banana,
@@ -73,12 +72,13 @@ character_abilities = {
     "Coach": Coach,
     "Blimp": Blimp,
     "RocketScientist": RocketScientist,
-    "ClownCar": ClownCar,
     "Egg": Egg,
     "LovableLoser": LoveableLoser,
     "Twin": Twin,
     "ThirdWheel": ThirdWheel,
-    "Sisyphis": Sisyphis
+    "Sisyphus": Sisyphus,
+    "Copycat": Copycat,
+    "Stickler": Stickler
 }
 
 # Game-wide constants

@@ -1,8 +1,8 @@
 from characters.base_character import Character
 from power_system import PowerPhase
 
-class Sisyphis(Character):
-    """When I roll a 6, I go back to start and lose a bronze chip."""
+class Sisyphus(Character):
+    """Before my race, I take 4 bronze point chips. When I roll a 6 for my Main Move, instead of moving, I warp to the Start and lose 1 point chip."""
 
     POWER_PHASES = {PowerPhase.DIE_ROLL_TRIGGER}
 

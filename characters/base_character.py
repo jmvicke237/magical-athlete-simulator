@@ -154,6 +154,15 @@ class Character:
             if self.finished:
                 return
 
+            # Check for Stickler's rule: can't overshoot the finish line
+            from characters.stickler import Stickler
+            if Stickler.is_in_game(game) and self.piece != "Stickler":
+                if Stickler.would_overshoot(self.position, spaces, game.board.length):
+                    play_by_play_lines.append(
+                        f"{self.name} ({self.piece}) would overshoot the finish line with {spaces} spaces. No movement due to Stickler!"
+                    )
+                    return
+
             self.previous_position = self.position
             self.position = min(self.position + spaces, game.board.length)
 
