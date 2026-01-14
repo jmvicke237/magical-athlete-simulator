@@ -5,20 +5,6 @@ import matplotlib.pyplot as plt
 from game_simulation import run_simulations
 from config import character_abilities
 
-# Cache simulation results to prevent re-running on every interaction
-@st.cache_data(ttl=3600)  # Cache for 1 hour
-def run_cached_simulations(num_simulations, num_racers, board_type, fixed_characters_tuple, random_turn_order):
-    """Cached wrapper for run_simulations to reduce memory usage and improve performance."""
-    # Convert tuple back to list (tuples are hashable for caching)
-    fixed_characters = list(fixed_characters_tuple) if fixed_characters_tuple else None
-    return run_simulations(
-        num_simulations, num_racers,
-        board_type=board_type,
-        fixed_characters=fixed_characters,
-        random_turn_order=random_turn_order,
-        collect_detailed_logs=False  # Don't collect logs to save memory
-    )
-
 st.title("Magical Athlete Simulator")
 
 tab1, tab2 = st.tabs(["Race Simulation", "About"])
@@ -59,12 +45,10 @@ with tab1:
                 board_type = 'Wild'
 
             with st.spinner("Running simulations..."):
-                # Convert selected_chars to tuple for caching (lists aren't hashable)
-                fixed_chars_tuple = tuple(selected_chars) if selected_chars else None
-
-                # Use cached version to reduce memory and prevent re-runs
-                average_turns, average_finish_positions, all_play_by_play, average_ability_activations, appearance_count, average_chip_stats, board_type_counts = run_cached_simulations(
-                    num_simulations, num_racers, board_type=board_type, fixed_characters_tuple=fixed_chars_tuple, random_turn_order=True
+                # Note: collect_detailed_logs=False to save memory in Streamlit Cloud
+                # This allows seeing variability across multiple runs with same parameters
+                average_turns, average_finish_positions, all_play_by_play, average_ability_activations, appearance_count, average_chip_stats, board_type_counts = run_simulations(
+                    num_simulations, num_racers, board_type=board_type, fixed_characters=selected_chars, random_turn_order=True, collect_detailed_logs=False
                 )
             
             st.success(f"Completed {num_simulations} simulations!")
