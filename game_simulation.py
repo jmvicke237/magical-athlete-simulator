@@ -33,6 +33,9 @@ class Game:
             'space_check': 0
         }
         self._max_recursion_depth = 3  # Set a reasonable limit
+
+        # State history for detecting true infinite loops (repeating game states)
+        self._state_history = []
         
         self._create_players(character_names, random_turn_order)
 
@@ -47,6 +50,54 @@ class Game:
             random.shuffle(self.turn_order)
         for i, player in enumerate(self.players):
             player.player_number = i + 1
+
+    def get_game_state_snapshot(self):
+        """Get a hashable snapshot of current game state for loop detection.
+
+        Returns a tuple representing the complete game state. If this state
+        repeats, we have a true infinite loop.
+        """
+        return (
+            tuple(p.position for p in self.players),
+            tuple(p.finished for p in self.players),
+            tuple(p.tripped for p in self.players),
+            tuple(p.skip_main_move for p in self.players),
+        )
+
+    def check_for_state_loop(self, character_name, play_by_play_lines):
+        """Check if the current game state has been seen before in this turn.
+
+        Returns True if a loop is detected (same state seen twice).
+        This indicates a true infinite loop that should be broken.
+
+        NOTE: This also adds the current state to history, so states persist
+        across ability-triggered moves within a turn.
+        """
+        current_state = self.get_game_state_snapshot()
+
+        if current_state in self._state_history:
+            # We've returned to a previous state - this is a true infinite loop!
+            play_by_play_lines.append(
+                f"Infinite loop detected: Game returned to identical state. Breaking loop for {character_name}."
+            )
+            return True
+
+        # Add current state to history for future loop detection
+        self._state_history.append(current_state)
+        return False
+
+    def clear_state_history(self):
+        """Clear state history at the end of a turn."""
+        self._state_history = []
+
+    def push_game_state(self):
+        """Push current game state onto history stack."""
+        self._state_history.append(self.get_game_state_snapshot())
+
+    def pop_game_state(self):
+        """Pop most recent game state from history stack."""
+        if self._state_history:
+            self._state_history.pop()
 
     def run(self, play_by_play_lines):
         turns = 0
@@ -68,8 +119,7 @@ class Game:
                     player.take_turn(game=self, play_by_play_lines=play_by_play_lines)
                     if self.should_game_end(play_by_play_lines):
                         break
-                    for p in self.players:
-                        p.post_turn_actions(self, player, play_by_play_lines)
+                    # Note: post_turn_actions is now handled by POST_TURN phase in take_turn()
                 if self.should_game_end(play_by_play_lines):
                     break
                 self.next_player()

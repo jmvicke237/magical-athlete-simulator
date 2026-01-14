@@ -33,12 +33,9 @@ from characters.hare import Hare
 from characters.coach import Coach
 from characters.blimp import Blimp
 from characters.rocketscientist import RocketScientist
-from characters.egg import Egg
 from characters.loveableloser import LoveableLoser
-from characters.twin import Twin
 from characters.thirdwheel import ThirdWheel
 from characters.sisyphus import Sisyphus
-from characters.copycat import Copycat
 from characters.stickler import Stickler
 
 character_abilities = {
@@ -72,12 +69,9 @@ character_abilities = {
     "Coach": Coach,
     "Blimp": Blimp,
     "RocketScientist": RocketScientist,
-    "Egg": Egg,
     "LovableLoser": LoveableLoser,
-    "Twin": Twin,
     "ThirdWheel": ThirdWheel,
     "Sisyphus": Sisyphus,
-    "Copycat": Copycat,
     "Stickler": Stickler
 }
 

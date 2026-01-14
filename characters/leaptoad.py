@@ -7,9 +7,14 @@ class Leaptoad(Character):
 
     POWER_PHASES = set()
     def move(self, game, play_by_play_lines, spaces):
-        """Move LeapToad, skipping occupied spaces, with recursion depth tracking."""
+        """Move LeapToad, skipping occupied spaces, with state-based loop detection."""
         # Rule: "Move 0" does not count as moving and should not trigger abilities
         if spaces == 0:
+            return
+
+        # Check for infinite loop (repeating game state)
+        # This also adds current state to history for tracking across ability chains
+        if game.check_for_state_loop(f"{self.name} ({self.piece})", play_by_play_lines):
             return
 
         # Import the logger for recursion tracking
@@ -17,16 +22,16 @@ class Leaptoad(Character):
 
         # Log state only when approaching recursion limits
         log_recursion_state(game, "leap move", self)
-        
-        # Guard against excessive recursion
+
+        # Safety fallback: Guard against excessive recursion depth
         if game._recursion_depths['movement'] >= game._max_recursion_depth:
             play_by_play_lines.append(f"WARNING: Maximum movement recursion depth ({game._max_recursion_depth}) reached for {self.name} ({self.piece})! Stopping recursion.")
-            
+
             # Log critical info about the recursion
             position_info = f"position={self.position}, spaces={spaces}"
             logger.error(f"Movement recursion limit reached for {self.name} ({self.piece}) at {position_info}")
             return
-        
+
         # Increment recursion counter
         game._recursion_depths['movement'] += 1
         

@@ -14,7 +14,7 @@ class Sisyphus(Character):
     def trigger_on_main_move_roll(self, roller, game, roll, play_by_play_lines):
         # Only trigger when this character rolls
         if roller == self and roll == 6:
-            self.register_ability_use(game, play_by_play_lines, "Rolled a 1, going back to start")
+            self.register_ability_use(game, play_by_play_lines, "Rolled a 6, going back to start")
             
             # Lose a bronze chip if available
             if self.bronze_chips > 0:

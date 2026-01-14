@@ -109,6 +109,9 @@ class Character:
         if self.skip_main_move:
             self.skip_main_move = False
 
+        # Clear state history at end of turn to prepare for next turn
+        game.clear_state_history()
+
     def pre_move_action(self, game, play_by_play_lines):
         pass
 
@@ -127,29 +130,34 @@ class Character:
         return roll
     
     def move(self, game, play_by_play_lines, spaces): # If this is changed, also change Leaptoad
-        """Move a character, with recursion depth tracking."""
+        """Move a character, with state-based loop detection."""
         # Rule: "Move 0" does not count as moving and should not trigger abilities
         if spaces == 0:
+            return
+
+        # Check for infinite loop (repeating game state)
+        # This also adds current state to history for tracking across ability chains
+        if game.check_for_state_loop(f"{self.name} ({self.piece})", play_by_play_lines):
             return
 
         # Import the logger for recursion tracking
         from debug_utils import log_recursion_state, logger
 
-        # Log state only when approaching recursion limits
+        # Log state only when approaching recursion limits (kept for debugging)
         log_recursion_state(game, "move", self)
 
-        # Guard against excessive recursion
+        # Safety fallback: Guard against excessive recursion depth
         if game._recursion_depths['movement'] >= game._max_recursion_depth:
             play_by_play_lines.append(f"WARNING: Maximum movement recursion depth ({game._max_recursion_depth}) reached for {self.name} ({self.piece})! Stopping recursion.")
-            
+
             # Log critical info about the recursion only when it happens
             position_info = f"position={self.position}, spaces={spaces}"
             logger.error(f"Movement recursion limit reached for {self.name} ({self.piece}) at {position_info}")
             return
-        
+
         # Increment recursion counter
         game._recursion_depths['movement'] += 1
-        
+
         try:
             if self.finished:
                 return
@@ -158,6 +166,12 @@ class Character:
             from characters.stickler import Stickler
             if Stickler.is_in_game(game) and self.piece != "Stickler":
                 if Stickler.would_overshoot(self.position, spaces, game.board.length):
+                    # Find Stickler and register ability use
+                    stickler = next((p for p in game.players if p.piece == "Stickler"), None)
+                    if stickler:
+                        stickler.register_ability_use(game, play_by_play_lines,
+                                                     f"Prevented {self.name} from overshooting")
+
                     play_by_play_lines.append(
                         f"{self.name} ({self.piece}) would overshoot the finish line with {spaces} spaces. No movement due to Stickler!"
                     )
@@ -237,14 +251,19 @@ class Character:
         self.tripped = True
 
     def jump(self, game, position, play_by_play_lines):
-        """Jump/warp a character to a position, with recursion depth tracking."""
+        """Jump/warp a character to a position, with state-based loop detection."""
+        # Check for infinite loop (repeating game state)
+        # This also adds current state to history for tracking across ability chains
+        if game.check_for_state_loop(f"{self.name} ({self.piece})", play_by_play_lines):
+            return
+
         # Import the logger for recursion tracking
         from debug_utils import log_recursion_state, logger
 
-        # Log state only when approaching recursion limits
+        # Log state only when approaching recursion limits (kept for debugging)
         log_recursion_state(game, "jump", self)
 
-        # Guard against excessive recursion
+        # Safety fallback: Guard against excessive recursion
         if game._recursion_depths['movement'] >= game._max_recursion_depth:
             play_by_play_lines.append(f"WARNING: Maximum jump recursion depth ({game._max_recursion_depth}) reached for {self.name} ({self.piece})! Stopping recursion.")
 
