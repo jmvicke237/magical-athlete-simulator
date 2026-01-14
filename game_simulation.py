@@ -120,6 +120,20 @@ class Game:
                     if self.should_game_end(play_by_play_lines):
                         break
                     # Note: post_turn_actions is now handled by POST_TURN phase in take_turn()
+
+                    # Check for queued turns (e.g., Skipper)
+                    if hasattr(self, 'queued_turns') and self.queued_turns:
+                        queued_players = self.queued_turns[:]
+                        self.queued_turns = []
+
+                        for queued_player in queued_players:
+                            if not queued_player.finished and queued_player not in self.eliminated_players:
+                                queued_player.take_turn(game=self, play_by_play_lines=play_by_play_lines)
+                                # Set current player to queued player so next_player() advances from here
+                                self.current_player_index = self.players.index(queued_player)
+                                if self.should_game_end(play_by_play_lines):
+                                    break
+
                 if self.should_game_end(play_by_play_lines):
                     break
                 self.next_player()
