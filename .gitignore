@@ -4,3 +4,5 @@ dist/
 build/
 logs/
 *.spec
+.DS_Store
+test_report.txt
