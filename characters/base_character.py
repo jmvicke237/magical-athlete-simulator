@@ -178,7 +178,8 @@ class Character:
                     return
 
             self.previous_position = self.position
-            self.position = min(self.position + spaces, game.board.length)
+            # Clamp position between 0 (Start) and game.board.length (Finish)
+            self.position = max(0, min(self.position + spaces, game.board.length))
 
             if self.position >= game.board.length:
                 self.position = game.board.length
