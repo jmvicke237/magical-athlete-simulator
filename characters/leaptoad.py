@@ -48,26 +48,35 @@ class Leaptoad(Character):
 
             # Get the direction of movement (1 for forward, -1 for backward)
             direction = 1 if spaces > 0 else -1 if spaces < 0 else 0
-            
+
             # Calculate movement, skipping occupied spaces
+            # Each "move" advances by 1, but if that space is occupied, skip it (don't count toward roll)
             for _ in range(abs(spaces)):
-                new_position += direction
                 if new_position >= game.board.length:
                     new_position = game.board.length
                     break
+
+                # Try to move to the next space
+                next_pos = new_position + direction
+
                 # Check if the next space is occupied (excluding Leaptoad itself)
-                occupied = False
-                for other_player in game.players:
-                    if other_player != self and other_player.position == new_position:
-                        occupied = True
-                        break
-                if occupied:
-                    play_by_play_lines.append(
-                        f"{self.name} ({self.piece}) skipped a space at {new_position}."
-                    )
-                    new_position += direction
-                    skipped_spaces = True
-                    continue  # Skip this space
+                while next_pos < game.board.length:
+                    occupied = False
+                    for other_player in game.players:
+                        if other_player != self and other_player.position == next_pos:
+                            occupied = True
+                            break
+
+                    if occupied:
+                        play_by_play_lines.append(
+                            f"{self.name} ({self.piece}) skipped a space at {next_pos}."
+                        )
+                        next_pos += direction  # Skip over the occupied space
+                        skipped_spaces = True
+                    else:
+                        break  # Found an unoccupied space
+
+                new_position = next_pos
             
             # Set the new position
             self.position = new_position
