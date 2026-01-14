@@ -78,9 +78,6 @@ with tab1:
             df = pd.DataFrame(char_data)
             df = df.sort_values("Avg Position")
 
-            # Add rank column
-            df.insert(0, "Rank", range(1, len(df) + 1))
-
             st.dataframe(df, use_container_width=True, hide_index=True)
 
 with tab2:
