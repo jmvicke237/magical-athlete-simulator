@@ -130,14 +130,15 @@ The rules are the same, except...
 ## Wild Wilds Track
 
 * **Arrows:** When you stop on a space with an arrow, move the number of spaces shown in the arrow's direction. This counts as a separate move than how you got there, and never part of your main move, if that matters. The Arrows on the following spaces:
-Space 5 = Move +3 arrow
-Space 14 = Move -4 arrow
-Space 20 = Move +2 arrow
-Space 21 = Move -2 arrow
+Space 7 = Move +3 arrow
+Space 11 = Move +1 arrow
+Space 16 = Move -4 arrow
+Space 23 = Move +2 arrow
+Space 24 = Move -2 arrow
 
-* **Trip:** When you stop on a space with a rock, you trip. The Trips are on Spaces 3 and 15
+* **Trip:** When you stop on a space with a rock, you trip. The Trips are on Spaces 5, 17, and 26
 
-* **Star:** When you stop on s pace with a star, take a bronze 1 point chip. The Stars are on Spaces 1, 11, and 24
+* **Star:** When you stop on s pace with a star, take a bronze 1 point chip. The Stars are on Spaces 1 and 13
 
 
 ## Fiddly Details:
