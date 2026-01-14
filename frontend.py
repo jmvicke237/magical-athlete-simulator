@@ -388,8 +388,9 @@ class MagicalAthleteApp:
         def run_simulations_thread():
             try:
                 # Updated to handle the additional returns including chip statistics and board type counts
+                # collect_detailed_logs=True because frontend has an export logs feature
                 average_turns, average_finish_positions, all_play_by_play, ability_activations, appearance_count, chip_stats, board_type_counts = run_simulations(
-                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True
+                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True
                 )
                 
                 # Display results with ability data included

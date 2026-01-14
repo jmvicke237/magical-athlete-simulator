@@ -379,8 +379,13 @@ def _run_single_simulation(character_names, board_type=DEFAULT_BOARD_TYPE, rando
     play_by_play_lines.insert(0, f"Board: {game.board.get_display_name()}")
     return turns, final_placements, play_by_play_lines, game.board.board_type
 
-def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False):
-    """Run multiple simulations and return statistics with proper ability tracking."""
+def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False):
+    """Run multiple simulations and return statistics with proper ability tracking.
+
+    Args:
+        collect_detailed_logs: If True, collects detailed play-by-play logs (memory intensive).
+                               Set to False for production/Streamlit to save memory.
+    """
     # Redirect print output to capture debug statements
     import io
     import sys
@@ -393,9 +398,11 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
         ability_activations = {char: [] for char in character_abilities.keys()}
         appearance_count = {char: 0 for char in character_abilities.keys()}  # Track appearances
         chip_statistics = {char: [] for char in character_abilities.keys()}  # Track chip statistics
-        all_play_by_play = []
-        complete_logs = []  # Store full logs for each simulation
-        
+
+        # Only collect detailed logs if requested (saves memory for Streamlit)
+        all_play_by_play = [] if collect_detailed_logs else None
+        complete_logs = [] if collect_detailed_logs else None
+
         # Track board type usage
         board_type_counts = {"Mild": 0, "Wild": 0}
         
@@ -419,50 +426,56 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
             for char in selected_characters:
                 appearance_count[char] += 1
             
-            # Store the complete logs
-            complete_logs.append("\n".join(play_by_play_lines))
-            
-            # Debug output - include ability activation counts
-            debug_info = [f"--- Simulation {i+1} ---"]
-            debug_info.append(f"Selected characters: {selected_characters}")
-            debug_info.append("Ability activations:")
+            # Store the complete logs (only if collecting detailed logs)
+            if collect_detailed_logs:
+                complete_logs.append("\n".join(play_by_play_lines))
+
+            # Debug output - include ability activation counts (only if collecting detailed logs)
+            if collect_detailed_logs:
+                debug_info = [f"--- Simulation {i+1} ---"]
+                debug_info.append(f"Selected characters: {selected_characters}")
+                debug_info.append("Ability activations:")
             
             try:
                 # Get the game object from the most recent simulation
                 current_game = game  # This was the issue - 'game' variable wasn't defined in this scope
-                
+
                 # Get ability statistics
                 char_ability_stats = current_game.get_ability_statistics()
-                
-                # Debug output
-                debug_info.append("Ability activations:")
-                for char, count in char_ability_stats.items():
-                    debug_info.append(f"  {char}: {count}")
-                    
+
+                # Debug output (only if collecting detailed logs)
+                if collect_detailed_logs:
+                    debug_info.append("Ability activations:")
+                    for char, count in char_ability_stats.items():
+                        debug_info.append(f"  {char}: {count}")
+
                 # Store for averaging
                 for char, count in char_ability_stats.items():
                     if char in ability_activations:
                         ability_activations[char].append(count)
-                
+
                 # Get chip statistics
                 chip_stats = current_game.get_chip_statistics()
-                
-                # Debug output
-                debug_info.append("Chip statistics:")
-                for char, stats in chip_stats.items():
-                    debug_info.append(f"  {char}: {stats['points']} points (G:{stats['gold']}, S:{stats['silver']}, B:{stats['bronze']})")
-                    
+
+                # Debug output (only if collecting detailed logs)
+                if collect_detailed_logs:
+                    debug_info.append("Chip statistics:")
+                    for char, stats in chip_stats.items():
+                        debug_info.append(f"  {char}: {stats['points']} points (G:{stats['gold']}, S:{stats['silver']}, B:{stats['bronze']})")
+
                 # Track chip statistics (we'll add it to the return values)
                 for char, stats in chip_stats.items():
                     if char not in chip_statistics:
                         chip_statistics[char] = []
                     chip_statistics[char].append(stats)
             except Exception as e:
-                debug_info.append(f"Error getting statistics: {str(e)}")
-            
-            # Add debug info to play-by-play
-            all_play_by_play.extend(debug_info)
-            all_play_by_play.extend(play_by_play_lines)
+                if collect_detailed_logs:
+                    debug_info.append(f"Error getting statistics: {str(e)}")
+
+            # Add debug info to play-by-play (only if collecting detailed logs)
+            if collect_detailed_logs:
+                all_play_by_play.extend(debug_info)
+                all_play_by_play.extend(play_by_play_lines)
             
             all_turns.append(turns)
             
@@ -478,10 +491,12 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
             if counts:
                 avg = sum(counts) / len(counts)
                 average_ability_activations[char] = avg
-                all_play_by_play.append(f"Average ability uses for {char}: {avg:.2f}")
+                if collect_detailed_logs:
+                    all_play_by_play.append(f"Average ability uses for {char}: {avg:.2f}")
             else:
                 average_ability_activations[char] = 0
-                all_play_by_play.append(f"No data for {char} ability uses")
+                if collect_detailed_logs:
+                    all_play_by_play.append(f"No data for {char} ability uses")
         
         # Calculate average chip statistics
         average_chip_stats = {}
@@ -500,27 +515,31 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
                     'bronze_avg': total_bronze / num_appearances,
                     'points_avg': total_points / num_appearances
                 }
-                
-                all_play_by_play.append(f"Average points for {char}: {total_points / num_appearances:.2f}")
+
+                if collect_detailed_logs:
+                    all_play_by_play.append(f"Average points for {char}: {total_points / num_appearances:.2f}")
             else:
                 average_chip_stats[char] = {
                     'gold_avg': 0, 'silver_avg': 0, 'bronze_avg': 0, 'points_avg': 0
                 }
+
+        # Add character appearance counts to the debug output (only if collecting detailed logs)
+        if collect_detailed_logs:
+            all_play_by_play.append("\nCharacter appearance counts:")
+            for char, count in appearance_count.items():
+                if count > 0:
+                    all_play_by_play.append(f"{char}: {count} races")
+
+            # Add board type usage statistics
+            all_play_by_play.append("\nBoard type usage:")
+            for board_type, count in board_type_counts.items():
+                if count > 0:
+                    percentage = (count / num_simulations) * 100
+                    all_play_by_play.append(f"{board_type} Board: {count} races ({percentage:.1f}%)")
         
-        # Add character appearance counts to the debug output
-        all_play_by_play.append("\nCharacter appearance counts:")
-        for char, count in appearance_count.items():
-            if count > 0:
-                all_play_by_play.append(f"{char}: {count} races")
-        
-        # Add board type usage statistics
-        all_play_by_play.append("\nBoard type usage:")
-        for board_type, count in board_type_counts.items():
-            if count > 0:
-                percentage = (count / num_simulations) * 100
-                all_play_by_play.append(f"{board_type} Board: {count} races ({percentage:.1f}%)")
-        
-        return average_turns, average_finish_positions, all_play_by_play, average_ability_activations, appearance_count, average_chip_stats, board_type_counts
+        # Return empty list for play-by-play if detailed logs weren't collected
+        play_by_play_result = all_play_by_play if collect_detailed_logs else []
+        return average_turns, average_finish_positions, play_by_play_result, average_ability_activations, appearance_count, average_chip_stats, board_type_counts
     finally:
         # Restore stdout
         sys.stdout = original_stdout
