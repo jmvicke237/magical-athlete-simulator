@@ -7,13 +7,21 @@ from config import character_abilities
 
 st.title("Magical Athlete Simulator")
 
-tab1, tab2, tab3 = st.tabs(["Race Simulation", "Character Statistics", "About"])
+tab1, tab2 = st.tabs(["Race Simulation", "About"])
 
 with tab1:
     st.header("Single Race Simulation")
-    num_simulations = st.slider("Number of Simulations", 1, 500, 100)
+    num_simulations = st.slider("Number of Simulations", 1, 10000, 100)
     num_racers = st.slider("Number of Racers", 2, 10, 4)
-    
+
+    # Board type selection
+    st.write("Board Types:")
+    col1, col2 = st.columns(2)
+    with col1:
+        use_mild = st.checkbox("Mild", value=True)
+    with col2:
+        use_wild = st.checkbox("Wild", value=True)
+
     # Character selection
     character_selection = st.radio("Character Selection", ["Random", "Fixed"])
     
@@ -24,11 +32,23 @@ with tab1:
         selected_chars = None
     
     if st.button("Run Simulations"):
-        with st.spinner("Running simulations..."):
-            # run_simulations now returns 7 values after Phase 2 refactoring
-            average_turns, average_finish_positions, all_play_by_play, average_ability_activations, appearance_count, average_chip_stats, board_type_counts = run_simulations(
-                num_simulations, num_racers, board_type='Random', fixed_characters=selected_chars, random_turn_order=True
-            )
+        # Validate board selection
+        if not use_mild and not use_wild:
+            st.error("Please select at least one board type.")
+        else:
+            # Determine board type parameter
+            if use_mild and use_wild:
+                board_type = 'Random'
+            elif use_mild:
+                board_type = 'Mild'
+            else:
+                board_type = 'Wild'
+
+            with st.spinner("Running simulations..."):
+                # run_simulations now returns 7 values after Phase 2 refactoring
+                average_turns, average_finish_positions, all_play_by_play, average_ability_activations, appearance_count, average_chip_stats, board_type_counts = run_simulations(
+                    num_simulations, num_racers, board_type=board_type, fixed_characters=selected_chars, random_turn_order=True
+                )
             
             st.success(f"Completed {num_simulations} simulations!")
             st.write(f"Average turns per race: {average_turns:.2f}")
@@ -60,18 +80,7 @@ with tab1:
 
             st.dataframe(df, use_container_width=True)
 
-            # Show sample log from all_play_by_play
-            st.subheader("Sample Play-by-Play")
-            if all_play_by_play:
-                # all_play_by_play is a list of lines, show first 50
-                sample_log = '\n'.join(all_play_by_play[:50])
-                st.text_area("First Race Details", sample_log, height=400)
-
 with tab2:
-    st.header("Character Statistics")
-    # Similar to tab1 but focused on character stats
-    
-with tab3:
     st.header("About Magical Athlete Simulator")
     st.write("""
     This simulator was created to analyze the balance and gameplay of the 
