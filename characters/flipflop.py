@@ -1,10 +1,13 @@
 # flipflop.py
 
 from .base_character import Character
+from power_system import PowerPhase
 
 class FlipFlop(Character):
+    """I can skip rolling for my main move and swap spaces with another racer instead."""
 
-    POWER_PHASES = set()
+    POWER_PHASES = {PowerPhase.PRE_ROLL}
+
     def pre_move_action(self, game, play_by_play_lines):
         """
         FlipFlop swaps places with the furthest player who is at least 4 spaces ahead.
