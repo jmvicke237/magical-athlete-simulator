@@ -47,7 +47,13 @@ class Mole(Character):
     def _maybe_warp(self, game, play_by_play_lines):
         depth = getattr(self, '_warp_cascade_depth', 0)
         if depth >= self._MAX_CASCADE_DEPTH:
-            return  # Backstop against runaway cascades (state-loop may miss subtle cycles)
+            # Backstop against runaway cascades (state-loop may miss subtle cycles).
+            # Emit a diagnostic so silent truncation is visible in the play-by-play.
+            play_by_play_lines.append(
+                f"{self.name} ({self.piece}) hit warp cascade cap "
+                f"({self._MAX_CASCADE_DEPTH}) — further warps this chain suppressed."
+            )
+            return
         if self.finished or self in game.eliminated_players:
             return
         # AntimagicalAthlete: Mole's warp is a power; suppressed when ahead.

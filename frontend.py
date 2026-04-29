@@ -1,6 +1,7 @@
 # frontend.py
+import csv
 import tkinter as tk
-from tkinter import ttk, scrolledtext, messagebox
+from tkinter import ttk, scrolledtext, messagebox, filedialog
 import threading
 import time
 import matplotlib.pyplot as plt
@@ -455,6 +456,7 @@ class MagicalAthleteApp:
             ranking.append({
                 "character": char,
                 "appearances": n,
+                "wins": wins[char],
                 "win_rate": (wins[char] / n) * 100,
                 "avg_position": position_sum[char] / n,
                 "avg_points": points_sum[char] / n,
@@ -636,6 +638,7 @@ class MagicalAthleteApp:
             ranking.append({
                 "character": char,
                 "appearances": appearances,
+                "wins": wins,
                 "win_rate": win_rate,
                 "avg_position": avg_pos,
                 "avg_points": avg_pts,
@@ -645,15 +648,29 @@ class MagicalAthleteApp:
         return ranking
     
     def _setup_character_analysis_tab(self):
-        # Status bar at the top
+        # Latest ranking cache so the CSV export can pull raw numeric values
+        # (rather than the formatted strings displayed in the Treeview).
+        self._current_ranking = []
+        self._current_ranking_status = ""
+
+        # Top bar: status label on the left, Export to CSV on the right.
+        top_bar = ttk.Frame(self.character_analysis_tab)
+        top_bar.pack(fill="x", padx=10, pady=(10, 0))
         self.analysis_status_var = tk.StringVar(
             value="Run a simulation on the Single Race or Tournament tab to populate this view."
         )
         ttk.Label(
-            self.character_analysis_tab,
+            top_bar,
             textvariable=self.analysis_status_var,
             anchor="w",
-        ).pack(fill="x", padx=10, pady=(10, 0))
+        ).pack(side="left", fill="x", expand=True)
+        self.export_csv_button = ttk.Button(
+            top_bar,
+            text="Export to CSV",
+            command=self._export_character_stats_csv,
+            state=tk.DISABLED,
+        )
+        self.export_csv_button.pack(side="right", padx=(8, 0))
 
         # Rankings table
         table_frame = ttk.LabelFrame(self.character_analysis_tab, text="Character Rankings")
@@ -696,6 +713,88 @@ class MagicalAthleteApp:
                 f"{avg_abil:.2f}" if avg_abil is not None else "—",
             ))
         self.analysis_status_var.set(status)
+
+        # Cache for CSV export and enable the button now that we have data.
+        self._current_ranking = list(ranking)
+        self._current_ranking_status = status
+        if hasattr(self, "export_csv_button") and self.export_csv_button:
+            self.export_csv_button.config(
+                state=tk.NORMAL if ranking else tk.DISABLED
+            )
+
+    def _export_character_stats_csv(self):
+        """Save the Character Rankings table as a CSV.
+
+        Writes raw numeric values (not the formatted strings shown in the
+        Treeview) so spreadsheet apps and Slack previews can sort columns
+        correctly. Includes a leading comment row with the source-run status
+        for context (board type, sim count, edition).
+        """
+        ranking = getattr(self, "_current_ranking", None)
+        if not ranking:
+            messagebox.showinfo(
+                "Export to CSV",
+                "No character stats to export. Run a simulation first."
+            )
+            return
+
+        from datetime import datetime
+        default_filename = (
+            f"character_stats_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        )
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            initialfile=default_filename,
+            title="Save Character Stats CSV",
+        )
+        if not file_path:
+            return
+
+        # Column headers chosen for spreadsheet sorting:
+        # - "Win Rate (%)" stored as a number, no % sign in the cell
+        # - Numeric columns rounded but kept as floats so sort treats them as numbers
+        headers = [
+            "Character",
+            "Races",
+            "Wins",
+            "Win Rate (%)",
+            "Avg Position",
+            "Avg Points",
+            "Avg Ability Triggers",
+        ]
+
+        try:
+            with open(file_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                # Single context line as a comment-style first row. Most
+                # spreadsheets treat this as a regular row; users can delete
+                # it if it gets in the way of sorting.
+                status = getattr(self, "_current_ranking_status", "") or ""
+                if status:
+                    writer.writerow([f"# {status}"])
+                writer.writerow(headers)
+                for entry in ranking:
+                    avg_pts = entry.get("avg_points")
+                    avg_abil = entry.get("avg_ability_triggers")
+                    writer.writerow([
+                        entry["character"],
+                        entry["appearances"],
+                        entry.get("wins", ""),
+                        round(entry["win_rate"], 2),
+                        round(entry["avg_position"], 3),
+                        round(avg_pts, 3) if avg_pts is not None else "",
+                        round(avg_abil, 3) if avg_abil is not None else "",
+                    ])
+            messagebox.showinfo(
+                "Export to CSV",
+                f"Character stats exported to:\n{file_path}"
+            )
+        except Exception as e:
+            messagebox.showerror(
+                "Export Error",
+                f"An error occurred while exporting the CSV:\n{str(e)}"
+            )
 
     def _sort_analysis_tree(self, column, numeric=False, reverse=False):
         items = [(self.analysis_tree.set(child, column), child) for child in self.analysis_tree.get_children("")]

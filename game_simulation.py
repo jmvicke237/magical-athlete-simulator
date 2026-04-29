@@ -53,24 +53,32 @@ class Game:
         
         self._create_players(character_names, random_turn_order)
 
-        # Random starting bronze chips per racer (0-5 each), applied first.
+        # Snapshot baseline as ALL ZEROS for character-spec chips (e.g.,
+        # Sisyphus starts with 4 bronze in __init__ — those are part of the
+        # character's mechanic and DO count as "points earned this race", so
+        # we don't include them in the baseline).
+        self._chip_baseline = {
+            id(p): (0, 0, 0) for p in self.players
+        }
+
+        # Random starting bronze chips per racer (0-5 each). These DO go into
+        # the baseline (settings-based chips don't count as earned points).
         if self._random_starting_bronze:
             for player in self.players:
-                player.bronze_chips += random.randint(0, 5)
+                bonus = random.randint(0, 5)
+                player.bronze_chips += bonus
+                g, s, b = self._chip_baseline[id(player)]
+                self._chip_baseline[id(player)] = (g, s, b + bonus)
 
-        # Grant Prometheus starting bronze chips (overrides random for Prometheus).
+        # Grant Prometheus starting bronze chips (overrides everything for
+        # Prometheus — including any natural chips and any random bonus).
+        # Baseline updated to match so delta starts at 0.
         if self._prometheus_starting_points > 0:
             for player in self.players:
                 if player.piece == "Prometheus":
                     player.bronze_chips = self._prometheus_starting_points
-
-        # Snapshot starting chips AFTER all seeding so get_chip_statistics can
-        # return deltas (points earned/lost during the race, not counting
-        # chips granted before the race started).
-        self._chip_baseline = {
-            id(p): (p.gold_chips, p.silver_chips, p.bronze_chips)
-            for p in self.players
-        }
+                    g, s, _ = self._chip_baseline[id(player)]
+                    self._chip_baseline[id(player)] = (g, s, self._prometheus_starting_points)
 
     def _create_players(self, character_names, random_turn_order):
         for i, name in enumerate(character_names):
