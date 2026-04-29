@@ -57,6 +57,14 @@ class Game:
                 if player.piece == "Prometheus":
                     player.bronze_chips = self._prometheus_starting_points
 
+        # Snapshot starting chips AFTER all seeding so get_chip_statistics can
+        # return deltas (points earned/lost during the race, not counting
+        # chips granted before the race started).
+        self._chip_baseline = {
+            id(p): (p.gold_chips, p.silver_chips, p.bronze_chips)
+            for p in self.players
+        }
+
     def _create_players(self, character_names, random_turn_order):
         for i, name in enumerate(character_names):
             char_class = character_abilities.get(name, Character)
@@ -434,14 +442,24 @@ class Game:
         return {player.piece: getattr(player, 'ability_activations', 0) for player in self.players}
         
     def get_chip_statistics(self):
-        """Returns a dictionary with chip counts for each character."""
+        """Returns chip DELTAs (current - starting) for each character. The
+        avg-points metric should reflect points earned during the race, not
+        chips seeded before it (random_starting_bronze, prometheus_starting_points).
+        Negative values are possible (e.g., Hotel charges, Spoilsport revokes)."""
         chip_stats = {}
+        baseline = getattr(self, '_chip_baseline', {})
         for player in self.players:
+            start_gold, start_silver, start_bronze = baseline.get(
+                id(player), (0, 0, 0)
+            )
+            gold_delta = player.gold_chips - start_gold
+            silver_delta = player.silver_chips - start_silver
+            bronze_delta = player.bronze_chips - start_bronze
             chip_stats[player.piece] = {
-                'gold': player.gold_chips,
-                'silver': player.silver_chips,
-                'bronze': player.bronze_chips,
-                'points': (player.gold_chips * 5) + (player.silver_chips * 3) + (player.bronze_chips * 1)
+                'gold': gold_delta,
+                'silver': silver_delta,
+                'bronze': bronze_delta,
+                'points': gold_delta * 5 + silver_delta * 3 + bronze_delta,
             }
         return chip_stats
 
