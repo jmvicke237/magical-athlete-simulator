@@ -195,17 +195,17 @@ class Character:
         # Import the logger for recursion tracking
         from debug_utils import log_recursion_state, logger
 
-        # Log state only when approaching recursion limits (kept for debugging)
-        log_recursion_state(game, "move", self)
-
-        # Safety fallback: Guard against excessive recursion depth
+        # Safety fallback: bail silently at recursion cap. Each fan-out
+        # cascade can hit this cap thousands of times per race; logging
+        # per-event blew memory in V1+V2 Wild stress tests.
         if game._recursion_depths['movement'] >= game._max_recursion_depth:
-            play_by_play_lines.append(f"WARNING: Maximum movement recursion depth ({game._max_recursion_depth}) reached for {self.name} ({self.piece})! Stopping recursion.")
-
-            # Log critical info about the recursion only when it happens
-            position_info = f"position={self.position}, spaces={spaces}"
-            logger.error(f"Movement recursion limit reached for {self.name} ({self.piece}) at {position_info}")
             return
+
+        # Watchdog: bump per-turn event counter and abort if cap exceeded.
+        game._turn_event_count = getattr(game, '_turn_event_count', 0) + 1
+        if game._turn_event_count > getattr(game, '_turn_event_cap', 5000):
+            from debug_utils import TurnEventCapExceeded
+            raise TurnEventCapExceeded(f"move event count {game._turn_event_count}")
 
         # Increment recursion counter
         game._recursion_depths['movement'] += 1
@@ -320,20 +320,15 @@ class Character:
         if game.check_for_state_loop(f"{self.name} ({self.piece})", play_by_play_lines):
             return
 
-        # Import the logger for recursion tracking
-        from debug_utils import log_recursion_state, logger
-
-        # Log state only when approaching recursion limits (kept for debugging)
-        log_recursion_state(game, "jump", self)
-
-        # Safety fallback: Guard against excessive recursion
+        # Safety fallback: bail silently at recursion cap (see base.move comment).
         if game._recursion_depths['movement'] >= game._max_recursion_depth:
-            play_by_play_lines.append(f"WARNING: Maximum jump recursion depth ({game._max_recursion_depth}) reached for {self.name} ({self.piece})! Stopping recursion.")
-
-            # Log critical info about the recursion only when it happens
-            position_info = f"from={self.position}, to={position}"
-            logger.error(f"Jump recursion limit reached for {self.name} ({self.piece}) at {position_info}")
             return
+
+        # Watchdog: bump per-turn event counter and abort if cap exceeded.
+        game._turn_event_count = getattr(game, '_turn_event_count', 0) + 1
+        if game._turn_event_count > getattr(game, '_turn_event_cap', 5000):
+            from debug_utils import TurnEventCapExceeded
+            raise TurnEventCapExceeded(f"jump event count {game._turn_event_count}")
 
         # Increment recursion counter
         game._recursion_depths['movement'] += 1
@@ -412,12 +407,15 @@ class Character:
             game._recursion_depths = {'ability': 0}
             game._max_recursion_depth = 5
         
-        # Guard against excessive recursion
+        # Bail silently at cap to keep memory bounded under heavy fan-out.
         if game._recursion_depths.get('ability', 0) >= game._max_recursion_depth:
-            play_by_play_lines.append(
-                f"WARNING: Maximum ability recursion depth reached for {self.name} ({self.piece})! Stopping recursion."
-            )
             return
+
+        # Watchdog: bump per-turn event counter and abort if cap exceeded.
+        game._turn_event_count = getattr(game, '_turn_event_count', 0) + 1
+        if game._turn_event_count > getattr(game, '_turn_event_cap', 5000):
+            from debug_utils import TurnEventCapExceeded
+            raise TurnEventCapExceeded(f"ability event count {game._turn_event_count}")
         
         # Increment recursion counter
         game._recursion_depths['ability'] = game._recursion_depths.get('ability', 0) + 1

@@ -17,20 +17,15 @@ class Leaptoad(Character):
         if game.check_for_state_loop(f"{self.name} ({self.piece})", play_by_play_lines):
             return
 
-        # Import the logger for recursion tracking
-        from debug_utils import log_recursion_state, logger
-
-        # Log state only when approaching recursion limits
-        log_recursion_state(game, "leap move", self)
-
-        # Safety fallback: Guard against excessive recursion depth
+        # Safety fallback: bail silently at recursion cap (matches base.move).
         if game._recursion_depths['movement'] >= game._max_recursion_depth:
-            play_by_play_lines.append(f"WARNING: Maximum movement recursion depth ({game._max_recursion_depth}) reached for {self.name} ({self.piece})! Stopping recursion.")
-
-            # Log critical info about the recursion
-            position_info = f"position={self.position}, spaces={spaces}"
-            logger.error(f"Movement recursion limit reached for {self.name} ({self.piece}) at {position_info}")
             return
+
+        # Watchdog: bump per-turn event counter and abort if cap exceeded.
+        game._turn_event_count = getattr(game, '_turn_event_count', 0) + 1
+        if game._turn_event_count > getattr(game, '_turn_event_cap', 5000):
+            from debug_utils import TurnEventCapExceeded
+            raise TurnEventCapExceeded(f"leaptoad move event count {game._turn_event_count}")
 
         # Increment recursion counter
         game._recursion_depths['movement'] += 1

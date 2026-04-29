@@ -37,13 +37,12 @@ class Mole(Character):
                 and jumped_player.position == self.position):
             self._maybe_warp(game, play_by_play_lines)
 
-    # Max chained warps from a single outer trigger. Each cascade level adds
-    # ~5–7 stack frames (Mole.jump → super.jump → on_enter → Mole.move →
-    # super.move → _maybe_warp → next), so 150 stays well under Python's
-    # default 1000-frame recursion limit. In practice, any cascade that
-    # reaches this depth is almost certainly a non-terminating oscillation —
-    # legitimate cascades resolve in single-digit depths.
-    _MAX_CASCADE_DEPTH = 150
+    # Max chained warps from a single outer trigger. Kept conservative to
+    # avoid memory blow-up on V1+V2 Wild races: each Mole warp emits log
+    # lines AND triggers on_another_player_jump on every player, which can
+    # fan out through reactive characters (Romantic, HugeBaby, Scoocher,
+    # etc.). Legitimate cascades almost always resolve in single digits.
+    _MAX_CASCADE_DEPTH = 10
 
     def _maybe_warp(self, game, play_by_play_lines):
         depth = getattr(self, '_warp_cascade_depth', 0)

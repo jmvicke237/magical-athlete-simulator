@@ -11,6 +11,11 @@ class Buttinsky(Character):
     POWER_PHASES = set()
     EDITION = "v2"
 
+    # Cap reroll attempts to handle deterministic rollers (e.g., Legs always
+    # rolls 5, which would otherwise create an infinite loop with Buttinsky).
+    # 5 attempts is plenty for normal d6 rerolls (P(<4 within 5)=96.9%).
+    _MAX_REROLLS = 5
+
     def reroll_main_roll(self, roller, game, play_by_play_lines, roll):
         if roller is self:
             return roll
@@ -19,11 +24,19 @@ class Buttinsky(Character):
         if roller.position <= self.position:
             return roll  # Not ahead of me
 
-        while roll >= 4:
+        attempts = 0
+        while roll >= 4 and attempts < self._MAX_REROLLS:
             play_by_play_lines.append(
                 f"{self.name} ({self.piece}) butts in — makes {roller.name} "
                 f"({roller.piece}) reroll their {roll}!"
             )
             roll = roller.main_roll(game, play_by_play_lines)
             self.register_ability_use(game, play_by_play_lines, description="Buttinsky")
+            attempts += 1
+
+        if attempts >= self._MAX_REROLLS and roll >= 4:
+            play_by_play_lines.append(
+                f"{self.name} ({self.piece}) gives up after {attempts} rerolls — "
+                f"{roller.name}'s roll of {roll} stands."
+            )
         return roll

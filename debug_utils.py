@@ -66,17 +66,18 @@ def track_recursion_depth(func):
     
     return wrapper
 
+class TurnEventCapExceeded(Exception):
+    """Raised when a single turn produces more than Game._turn_event_cap
+    move/jump/ability events. Indicates a runaway cascade — likely a loop
+    that state-loop detection isn't catching. Caught in Game._take_turn_or_stun
+    so the race can continue past the bad turn while we collect diagnostics."""
+    pass
+
+
 def log_recursion_state(game, operation, player=None):
-    """Log the current recursion state with detailed information, but only when needed"""
-    # Only log if we're approaching recursion limits
-    if any(depth >= game._max_recursion_depth - 1 for depth in game._recursion_depths.values()):
-        player_info = f" for {player.name} ({player.piece})" if player else ""
-        message = f"Recursion state{player_info}: "
-        for op, depth in game._recursion_depths.items():
-            message += f"{op}={depth} "
-        logger.warning(f"Approaching recursion limit on {operation}{player_info}: {message}")
-        
-        # Get a stack trace for better debugging
-        import traceback
-        stack = traceback.format_stack()[:-1]  # Exclude this function call
-        logger.warning(f"Stack trace approaching recursion limit:\n{''.join(stack)}")
+    """No-op now. The previous implementation logged a full stack trace
+    whenever recursion approached the limit, which exploded memory on
+    Wild-board races where fan-out cascades hit the cap thousands of times
+    per simulation. The actual cap-hit is still logged once via logger.error
+    in base.move/base.jump, which is enough for debugging."""
+    pass

@@ -4,6 +4,7 @@ from config import character_abilities, BOARD_LENGTH, MAX_TURNS, CORNER_POSITION
 from characters.base_character import Character
 from board import Board
 from power_system import PowerPhase
+from debug_utils import TurnEventCapExceeded
 
 class Game:
     def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False):
@@ -31,6 +32,12 @@ class Game:
         self.current_player_index = 0
         self.race_cancelled = False  # Set by Spoilsport (or similar) to end the race
         self._last_main_roll = None  # Most recent main-roll value across all players (used by Apprentice)
+        # Watchdog: counts move/jump/ability events per turn. Reset in _take_turn_or_stun.
+        # Exceeding the cap raises TurnEventCapExceeded to abort the runaway cascade.
+        self._turn_event_count = 0
+        self._turn_event_cap = 5000
+        self._current_turn = 0  # Tracked for diagnostic logging
+        self._watchdog_diagnostics = []  # Diagnostic strings for any aborted turns this race
         
         # Recursion tracking for different operations
         self._recursion_depths = {
@@ -39,7 +46,7 @@ class Game:
             'ability': 0,
             'space_check': 0
         }
-        self._max_recursion_depth = 30  # Hard backstop. State-loop detection in move/jump catches real cycles; this only fires for unrecognized chains.
+        self._max_recursion_depth = 3  # Original conservative cap. Fan-out via on_another_player_move means each level multiplies events; deeper caps blow memory on V1+V2 Wild races. State-loop detection in move/jump is the primary cycle protection.
 
         # State history for detecting true infinite loops (repeating game states)
         self._state_history = []
@@ -137,6 +144,7 @@ class Game:
 
         while not self.should_game_end(play_by_play_lines) and turns < MAX_TURNS:
             turns += 1
+            self._current_turn = turns  # for watchdog diagnostics
             play_by_play_lines.append(f"\nTurn {turns}:")
 
             for _ in range(len(self.players)):
@@ -148,10 +156,12 @@ class Game:
                     # Note: post_turn_actions is now handled by POST_TURN phase in take_turn()
 
                     # Check for queued turns (e.g., Skipper, Hopfrog).
-                    # Loop until empty so chained bonus turns (Hopfrog landing
-                    # one-behind, getting another turn that lands one-behind
-                    # again, etc.) all process before moving to the next player.
-                    while hasattr(self, 'queued_turns') and self.queued_turns:
+                    # Single-round only: chained bonus turns that re-add to
+                    # the queue inside their own take_turn will be picked up
+                    # on the NEXT outer-loop iteration. Avoids unbounded
+                    # cascades on V1+V2 Wild combos (Hopfrog + Romantic + Mole
+                    # ping-ponging fan-out).
+                    if hasattr(self, 'queued_turns') and self.queued_turns:
                         queued_players = self.queued_turns[:]
                         self.queued_turns = []
 
@@ -208,16 +218,43 @@ class Game:
     def _take_turn_or_stun(self, player, play_by_play_lines):
         """Take the player's turn, unless an active Stunner is within 1 space.
         Stun completely skips the turn (NOT a trip — no abilities fire, no
-        Trip status is consumed)."""
-        stunner = self._find_active_stunner_near(player)
-        if stunner is not None:
-            play_by_play_lines.append(
-                f"{player.name} ({player.piece}) is stunned by "
-                f"{stunner.name} ({stunner.piece}) and skips their turn."
+        Trip status is consumed). Wraps the turn in a watchdog: if more than
+        Game._turn_event_cap move/jump/ability events fire during this turn,
+        TurnEventCapExceeded is raised, the turn aborts, and a diagnostic
+        line is captured (so we can identify the bad character combo)."""
+        # Reset event counter BEFORE any logic in this function (including the
+        # stunner branch which calls register_ability_use). Otherwise a high
+        # leftover count from the previous aborted turn would re-trip the
+        # watchdog before we get to the try-block.
+        self._turn_event_count = 0
+
+        # Wrap EVERYTHING in the try so any TurnEventCapExceeded is caught,
+        # including the stunner branch's register_ability_use.
+        try:
+            stunner = self._find_active_stunner_near(player)
+            if stunner is not None:
+                play_by_play_lines.append(
+                    f"{player.name} ({player.piece}) is stunned by "
+                    f"{stunner.name} ({stunner.piece}) and skips their turn."
+                )
+                stunner.register_ability_use(self, play_by_play_lines, description="Stunner")
+                return
+
+            player.take_turn(game=self, play_by_play_lines=play_by_play_lines)
+        except TurnEventCapExceeded as exc:
+            chars = [p.piece for p in self.players]
+            positions = [(p.piece, p.position) for p in self.players]
+            diag = (
+                f"WATCHDOG: turn {self._current_turn} aborted for "
+                f"{player.name} ({player.piece}) — {self._turn_event_count} events "
+                f"(cap {self._turn_event_cap}). chars={chars}, positions={positions}"
             )
-            stunner.register_ability_use(self, play_by_play_lines, description="Stunner")
-            return
-        player.take_turn(game=self, play_by_play_lines=play_by_play_lines)
+            play_by_play_lines.append(diag)
+            self._watchdog_diagnostics.append(diag)
+            # Surface to terminal so the user sees it during a hung sim
+            print(diag, flush=True)
+            # Reset count so subsequent turns start fresh.
+            self._turn_event_count = 0
 
     def _find_active_stunner_near(self, player):
         for p in self.players:
@@ -428,6 +465,10 @@ class Game:
                 # End-of-turn actions for all players
                 return power_owner.post_turn_actions(self, current_player, play_by_play_lines)
 
+        except TurnEventCapExceeded:
+            # Watchdog exception — must propagate up to _take_turn_or_stun's
+            # catch so the diagnostic gets logged and the turn aborts cleanly.
+            raise
         except Exception as e:
             play_by_play_lines.append(
                 f"ERROR: {power_owner.name} ({power_owner.piece}) failed in {phase}: {str(e)}"
@@ -462,6 +503,29 @@ class Game:
                 'points': gold_delta * 5 + silver_delta * 3 + bronze_delta,
             }
         return chip_stats
+
+class _CappedLogList(list):
+    """List subclass that caps append/extend after `cap` items.
+    After the cap is hit, a single truncation marker is added and further
+    appends become no-ops. Used inside run_simulations to keep per-race log
+    memory bounded when reactive characters create cascade fan-out."""
+
+    def __init__(self, cap=5000):
+        super().__init__()
+        self._cap = cap
+        self._truncated = False
+
+    def append(self, item):
+        if len(self) < self._cap:
+            list.append(self, item)
+        elif not self._truncated:
+            list.append(self, f"[Per-race log truncated at {self._cap} lines]")
+            self._truncated = True
+
+    def extend(self, items):
+        for item in items:
+            self.append(item)
+
 
 def _run_single_simulation(character_names, board_type=DEFAULT_BOARD_TYPE, random_turn_order=False):
     play_by_play_lines = []
@@ -505,9 +569,11 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
         for i in range(num_simulations):
             selected_characters = fixed_characters if fixed_characters else random.sample(sampling_pool, num_players)
             
-            # Run the simulation with the specified board type
+            # Run the simulation with the specified board type.
+            # Per-race log lines are capped to keep memory bounded with V1+V2
+            # reactive cascades (Mole+Romantic fan-out + bonus turns).
             game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, highroller_threshold=highroller_threshold, random_starting_bronze=random_starting_bronze)
-            play_by_play_lines = []
+            play_by_play_lines = _CappedLogList(cap=5000) if collect_detailed_logs else _CappedLogList(cap=500)
             turns, final_placements = game.run(play_by_play_lines)
             
             # Add board info to play-by-play

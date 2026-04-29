@@ -46,19 +46,14 @@ class Space:
 
     def on_enter(self, player, game, play_by_play_lines):
         """Handle special effects when a player lands on this space"""
-        # Import the logger for recursion tracking
-        from debug_utils import logger
-        
         # Use a separate recursion counter for space effects
         if 'space_check' not in game._recursion_depths:
             game._recursion_depths['space_check'] = 0
-        
-        # Check if we're in a recursive space effect
+
+        # Bail silently at cap to keep memory bounded under heavy fan-out.
         if game._recursion_depths['space_check'] >= game._max_recursion_depth:
-            logger.error(f"Maximum space effect recursion depth reached for {player.name} ({player.piece}) on {self.space_type} space!")
-            play_by_play_lines.append(f"WARNING: Space effect loop detected! Stopping recursion for {player.name}.")
             return
-        
+
         # Increment space effect recursion counter
         game._recursion_depths['space_check'] += 1
         
@@ -76,23 +71,8 @@ class Space:
                 if self.value != 0:
                     move_text = f"{abs(self.value)} space{'s' if abs(self.value) > 1 else ''} {'forward' if self.value > 0 else 'backward'}"
                     play_by_play_lines.append(f"{player.name} ({player.piece}) landed on a movement space and will move {move_text}!")
-                    
-                    # Special case for space 11 on Wild board (moves forward 1) with HugeBaby at space 12
-                    # This is a known infinite loop case
-                    if player.position == 11 and self.value == 1:
-                        hugeBaby_at_12 = False
-                        for p in game.players:
-                            if p.piece == "HugeBaby" and p.position == 12:
-                                hugeBaby_at_12 = True
-                                logger.warning(f"Detected potential infinite loop: {player.name} at space 11 with HugeBaby at space 12")
-                                
-                        # If we'd create an infinite loop AND we're already in at least one level of recursion, break the loop
-                        if hugeBaby_at_12 and game._recursion_depths['movement'] > 0:
-                            logger.warning(f"Breaking potential infinite loop for {player.name} at space 11")
-                            play_by_play_lines.append(f"{player.name} ({player.piece}) avoided getting stuck in a loop with HugeBaby!")
-                            return
-                    
-                    # Move the player
+                    # HugeBaby's look-ahead in _check_shared_space prevents the
+                    # classic Wild-board-position-11 + HugeBaby-at-12 loop.
                     player.move(game, play_by_play_lines, self.value)
         finally:
             # Decrement space effect recursion counter
