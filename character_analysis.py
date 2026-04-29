@@ -16,10 +16,13 @@ class CharacterAnalyzer:
         self.character_stats = {}
         self.global_stats = {}
     
-    def analyze_all_characters(self, num_simulations=100, racer_counts=[3, 4, 5, 6]):
-        """Run comprehensive analysis on all characters with fixed ability tracking."""
+    def analyze_all_characters(self, num_simulations=100, racer_counts=[3, 4, 5, 6], allowed_characters=None):
+        """Run comprehensive analysis on all characters with fixed ability tracking.
+
+        If allowed_characters is provided, only those characters are sampled and tracked.
+        """
         self.reset_stats()
-        all_characters = list(character_abilities.keys())
+        all_characters = list(allowed_characters) if allowed_characters else list(character_abilities.keys())
         
         # Initialize stats dictionary for each character
         for char in all_characters:
@@ -129,7 +132,7 @@ class CharacterAnalyzer:
             return self.results_cache[cache_key]
         
         # Run the simulations
-        average_turns, average_positions, play_by_play, ability_counts, appearance_count, chip_stats, board_type_counts = run_simulations(
+        average_turns, average_positions, play_by_play, ability_counts, appearance_count, chip_stats, board_type_counts, _win_counts, _turns_by_board = run_simulations(
             num_simulations, players_per_race, fixed_characters=[character_name], random_turn_order=True
         )
         

@@ -47,7 +47,7 @@ with tab1:
             with st.spinner("Running simulations..."):
                 # Note: collect_detailed_logs=False to save memory in Streamlit Cloud
                 # This allows seeing variability across multiple runs with same parameters
-                average_turns, average_finish_positions, all_play_by_play, average_ability_activations, appearance_count, average_chip_stats, board_type_counts = run_simulations(
+                average_turns, average_finish_positions, all_play_by_play, average_ability_activations, appearance_count, average_chip_stats, board_type_counts, _win_counts, _turns_by_board = run_simulations(
                     num_simulations, num_racers, board_type=board_type, fixed_characters=selected_chars, random_turn_order=True, collect_detailed_logs=False
                 )
             

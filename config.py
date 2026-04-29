@@ -38,6 +38,27 @@ from characters.thirdwheel import ThirdWheel
 from characters.sisyphus import Sisyphus
 from characters.stickler import Stickler
 
+# V2 characters
+from characters.dummy2 import Dummy2
+from characters.overtaker import Overtaker
+from characters.kingslayer import Kingslayer
+from characters.caboose import Caboose
+from characters.diceman import Diceman
+from characters.weremouth import Weremouth
+from characters.stinkeye import StinkEye
+from characters.silverspoon import SilverSpoon
+from characters.spoilsport import Spoilsport
+from characters.cheatah import Cheatah
+from characters.hogknight import HogKnight
+from characters.prometheus import Prometheus
+from characters.partypooper import PartyPooper
+from characters.blunderdog import Blunderdog
+from characters.spitball import SpitBall
+from characters.mole import Mole
+from characters.stunner import Stunner
+from characters.stepdad import Stepdad
+from characters.antimagicalathlete import AntimagicalAthlete
+
 character_abilities = {
     "HugeBaby": HugeBaby,
     "Cheerleader": Cheerleader,
@@ -72,8 +93,49 @@ character_abilities = {
     "LovableLoser": LoveableLoser,
     "ThirdWheel": ThirdWheel,
     "Sisyphus": Sisyphus,
-    "Stickler": Stickler
+    "Stickler": Stickler,
+    "Dummy2": Dummy2,
+    "Overtaker": Overtaker,
+    "Kingslayer": Kingslayer,
+    "Caboose": Caboose,
+    "Diceman": Diceman,
+    "Weremouth": Weremouth,
+    "StinkEye": StinkEye,
+    "SilverSpoon": SilverSpoon,
+    "Spoilsport": Spoilsport,
+    "Cheatah": Cheatah,
+    "HogKnight": HogKnight,
+    "Prometheus": Prometheus,
+    "PartyPooper": PartyPooper,
+    "Blunderdog": Blunderdog,
+    "SpitBall": SpitBall,
+    "Mole": Mole,
+    "Stunner": Stunner,
+    "Stepdad": Stepdad,
+    "AntimagicalAthlete": AntimagicalAthlete,
 }
+
+# Edition options for the frontend toggle. Each character class declares its
+# EDITION on the class itself (default "v1" via Character base).
+EDITIONS = ["V1", "V2", "All"]
+DEFAULT_EDITION = "V1"
+
+
+def get_characters_by_edition(edition):
+    """Return a filtered {name: class} dict for the given edition.
+
+    edition: "V1", "V2", or "All" (case-insensitive). Unknown values return all.
+    """
+    if edition is None:
+        return dict(character_abilities)
+    key = edition.lower()
+    if key == "all":
+        return dict(character_abilities)
+    return {
+        name: cls for name, cls in character_abilities.items()
+        if getattr(cls, "EDITION", "v1") == key
+    }
+
 
 # Game-wide constants
 BOARD_LENGTH = 30

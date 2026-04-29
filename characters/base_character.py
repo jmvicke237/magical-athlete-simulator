@@ -19,6 +19,11 @@ class Character:
 
     # Characters with abilities should override this
     POWER_PHASES = set()
+
+    # Edition tag — V2 characters override to "v2". Used for the edition toggle
+    # in the frontend; see config.get_characters_by_edition().
+    EDITION = "v1"
+
     def __init__(self, name, piece):
         self.name = name
         self.piece = piece
@@ -30,6 +35,7 @@ class Character:
         self.turn_start_position = 0
         self.last_roll = -1
         self.skip_main_move = False
+        self.main_move_multiplier = 1  # Each effect multiplies in (StinkEye -1, Blunderdog -1 or 3, etc.). Applied after ROLL_MODIFICATION; reset every turn.
         self.ability_activations = 0
         
         # Chip tracking
@@ -51,6 +57,7 @@ class Character:
         """
         self.turn_start_position = self.position
         self.last_roll = -1
+        self.main_move_multiplier = 1  # Reset each turn — effects (StinkEye, Blunderdog) compound by multiplying.
 
         # Check if tripped
         if self.tripped:
@@ -67,10 +74,13 @@ class Character:
             self.last_roll = roll
 
             # Handle rerolls (Magician, Dicemonger)
-            # Note: Rerolls happen before triggers, so we handle them specially
+            # Note: Rerolls happen before triggers, so we handle them specially.
+            # AntimagicalAthlete suppresses the rerollr's power if they're ahead.
             for player_index in game.turn_order:
                 other_player = game.players[player_index]
                 if hasattr(other_player, "reroll_main_roll"):
+                    if game.is_power_suppressed_for(other_player):
+                        continue
                     roll = other_player.reroll_main_roll(self, game, play_by_play_lines, roll)
                     self.last_roll = roll
 
@@ -84,6 +94,16 @@ class Character:
                 context = game.resolve_phase(PowerPhase.ROLL_MODIFICATION, self, play_by_play_lines,
                                             context={'roll': roll})
                 roll = context.get('roll', roll)
+
+                # Apply any move multiplier set during PRE_ROLL/DIE_ROLL_TRIGGER
+                # (StinkEye -1, Blunderdog -1 or 3, etc.). Effects compound multiplicatively.
+                if self.main_move_multiplier != 1:
+                    new_roll = roll * self.main_move_multiplier
+                    play_by_play_lines.append(
+                        f"  {self.name} ({self.piece})'s main move x{self.main_move_multiplier}: {roll} -> {new_roll}"
+                    )
+                    roll = new_roll
+
                 self.last_roll = roll
 
                 # PHASE 4: MOVEMENT - Execute the move
@@ -95,8 +115,10 @@ class Character:
                 # But we call it here for completeness and to ensure proper ordering
                 game.resolve_phase(PowerPhase.POST_MOVEMENT, self, play_by_play_lines)
 
-        # Execute post-move ability (for backwards compatibility with characters that use this)
-        self.post_move_ability(game, play_by_play_lines)
+        # Execute post-move ability (for backwards compatibility with characters that use this).
+        # AntimagicalAthlete suppresses post_move_ability when self is ahead of Antimag.
+        if not game.is_power_suppressed_for(self):
+            self.post_move_ability(game, play_by_play_lines)
 
         # PHASE 6: OTHER_REACTIONS - Additional reactions
         # Note: Most reactions happen via on_another_player_move() called from within move()
@@ -118,8 +140,33 @@ class Character:
     def main_roll(self, game, play_by_play_lines):
         roll = random.randint(1, 6)
         play_by_play_lines.append(f"{self.name} ({self.piece}) rolled a {roll}")
+        while roll == 6 and self._trigger_party_pooper(game, play_by_play_lines):
+            roll = random.randint(1, 6)
+            play_by_play_lines.append(f"  {self.name} ({self.piece}) rerolled and got a {roll}")
         self.last_roll = roll
         return roll
+
+    def _trigger_party_pooper(self, game, play_by_play_lines):
+        """If the roller isn't PartyPooper and an active PartyPooper is in
+        the game, force a reroll: PartyPooper moves +1 and registers an ability
+        use. Returns True if the caller should reroll. Used by base main_roll
+        and any subclass that overrides main_roll (Diceman)."""
+        if self.piece == "PartyPooper":
+            return False
+        pp = next((p for p in game.players
+                   if p.piece == "PartyPooper"
+                   and not p.finished
+                   and p not in game.eliminated_players), None)
+        if pp is None:
+            return False
+        play_by_play_lines.append(
+            f"  {pp.name} ({pp.piece}) forces {self.name} ({self.piece}) to reroll a 6!"
+        )
+        pp.move(game, play_by_play_lines, 1)
+        pp.register_ability_use(game, play_by_play_lines, description="PartyPooper")
+        if pp.finished or pp in game.eliminated_players:
+            return False
+        return True
     
     def modify_roll(self, game, play_by_play_lines, roll):
         """Iterate through all *other* players in turn order and apply their modifications."""
@@ -192,20 +239,24 @@ class Character:
                 current_space = game.board.spaces[self.position]
                 current_space.on_enter(self, game, play_by_play_lines)
 
-            # Detect and notify passed racers
+            # Detect and notify passed racers (AntimagicalAthlete: passed
+            # racers ahead of Antimag have no powers, so on_being_passed skips)
             passed_racers = self.detect_passes(game, self.previous_position, self.position)
             for passed_racer in passed_racers:
-                passed_racer.on_being_passed(self, game, play_by_play_lines)
+                if not game.is_power_suppressed_for(passed_racer):
+                    passed_racer.on_being_passed(self, game, play_by_play_lines)
 
             # Move Suckerfish before checking for on another_player_move to avoid conflicts
             for p in game.players:
                 if p.piece == "Suckerfish" and p != self:
-                    p.move_with_another(self, spaces, game, play_by_play_lines)
+                    if not game.is_power_suppressed_for(p):
+                        p.move_with_another(self, spaces, game, play_by_play_lines)
 
             # Notify other players about the movement
             for other_player in game.players:
                 if other_player != self:
-                    other_player.on_another_player_move(self, game, play_by_play_lines)
+                    if not game.is_power_suppressed_for(other_player):
+                        other_player.on_another_player_move(self, game, play_by_play_lines)
         finally:
             # Decrement recursion counter
             game._recursion_depths['movement'] -= 1
@@ -291,10 +342,11 @@ class Character:
                 current_space = game.board.spaces[self.position]
                 current_space.on_enter(self, game, play_by_play_lines)
 
-            # Notify other players about the jump
+            # Notify other players about the jump (AntimagicalAthlete suppresses)
             for other_player in game.players:
                 if other_player != self:
-                    other_player.on_another_player_jump(self, game, play_by_play_lines)
+                    if not game.is_power_suppressed_for(other_player):
+                        other_player.on_another_player_jump(self, game, play_by_play_lines)
         finally:
             # Decrement recursion counter
             game._recursion_depths['movement'] -= 1

@@ -46,9 +46,9 @@ class Player:
 
 class Tournament:
     """Manages a full 4-race tournament."""
-    def __init__(self, player_names):
+    def __init__(self, player_names, allowed_characters=None):
         self.players = [Player(name) for name in player_names]
-        self.racer_deck = list(character_abilities.keys())
+        self.racer_deck = list(allowed_characters) if allowed_characters else list(character_abilities.keys())
         self.races_completed = 0
         self.current_race = None
         self.current_race_players = []  # List of (Player, racer_name) tuples
@@ -108,7 +108,7 @@ class Tournament:
         self.play_by_play = []
         
         # Run the race and get results
-        _, final_placements = self.current_race.run(self.play_by_play)
+        turns_taken, final_placements = self.current_race.run(self.play_by_play)
         
         # Get the chip statistics from the game
         chip_stats = self.current_race.get_chip_statistics()
@@ -145,7 +145,9 @@ class Tournament:
         # Store race results
         self.race_results.append({
             "placements": final_placements,
-            "play_by_play": self.play_by_play.copy()
+            "play_by_play": self.play_by_play.copy(),
+            "turns": turns_taken,
+            "board_type": self.current_race.board.board_type,
         })
         
         self.races_completed += 1
@@ -201,16 +203,16 @@ class Tournament:
         return winner, self.players, self.race_results
 
 
-def run_tournament_simulation(player_names, board_type=DEFAULT_BOARD_TYPE):
+def run_tournament_simulation(player_names, board_type=DEFAULT_BOARD_TYPE, allowed_characters=None):
     """Run a simulation of a tournament with the given player names."""
     # Redirect print output to capture debug statements
     import io
     import sys
     original_stdout = sys.stdout
     sys.stdout = io.StringIO()
-    
+
     try:
-        tournament = Tournament(player_names)
+        tournament = Tournament(player_names, allowed_characters=allowed_characters)
         winner, all_players, race_results = tournament.run_tournament(board_type=board_type)
         
         # Calculate total points for each player

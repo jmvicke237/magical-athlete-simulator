@@ -6,3 +6,5 @@ logs/
 *.spec
 .DS_Store
 test_report.txt
+.venv/
+.claude/

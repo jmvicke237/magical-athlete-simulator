@@ -6,8 +6,11 @@ from board import Board
 from power_system import PowerPhase
 
 class Game:
-    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False):
+    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end"):
         self.players = []
+        self.prometheus_threshold = prometheus_threshold  # Lead size that triggers Prometheus self-elimination (strict > comparison)
+        self.prometheus_check_timing = prometheus_check_timing  # "start" or "end" — when the elimination check fires
+        self._prometheus_starting_points = prometheus_starting_points  # Granted as bronze chips after player creation
         
         # Handle board creation
         if board:
@@ -24,6 +27,7 @@ class Game:
         self.eliminated_players = []
         self.turn_order = []
         self.current_player_index = 0
+        self.race_cancelled = False  # Set by Spoilsport (or similar) to end the race
         
         # Recursion tracking for different operations
         self._recursion_depths = {
@@ -32,12 +36,18 @@ class Game:
             'ability': 0,
             'space_check': 0
         }
-        self._max_recursion_depth = 3  # Set a reasonable limit
+        self._max_recursion_depth = 30  # Hard backstop. State-loop detection in move/jump catches real cycles; this only fires for unrecognized chains.
 
         # State history for detecting true infinite loops (repeating game states)
         self._state_history = []
         
         self._create_players(character_names, random_turn_order)
+
+        # Grant Prometheus starting bronze chips (each = 1 point = +1 to move)
+        if self._prometheus_starting_points > 0:
+            for player in self.players:
+                if player.piece == "Prometheus":
+                    player.bronze_chips = self._prometheus_starting_points
 
     def _create_players(self, character_names, random_turn_order):
         for i, name in enumerate(character_names):
@@ -116,7 +126,7 @@ class Game:
             for _ in range(len(self.players)):
                 player = self.current_player
                 if not player.finished and player not in self.eliminated_players:
-                    player.take_turn(game=self, play_by_play_lines=play_by_play_lines)
+                    self._take_turn_or_stun(player, play_by_play_lines)
                     if self.should_game_end(play_by_play_lines):
                         break
                     # Note: post_turn_actions is now handled by POST_TURN phase in take_turn()
@@ -128,7 +138,7 @@ class Game:
 
                         for queued_player in queued_players:
                             if not queued_player.finished and queued_player not in self.eliminated_players:
-                                queued_player.take_turn(game=self, play_by_play_lines=play_by_play_lines)
+                                self._take_turn_or_stun(queued_player, play_by_play_lines)
                                 # Set current player to queued player so next_player() advances from here
                                 self.current_player_index = self.players.index(queued_player)
                                 if self.should_game_end(play_by_play_lines):
@@ -154,6 +164,44 @@ class Game:
             play_by_play_lines.append(f"{place}: {placed_player.name} ({placed_player.piece})")
         return turns, final_placements
 
+    def is_power_suppressed_for(self, character):
+        """True if any active AntimagicalAthlete is in the game and the given
+        character is strictly ahead of them. AntimagicalAthlete's spec:
+        "Racers ahead of me have no powers." Position is checked dynamically
+        at each call site so suppression updates immediately as racers move."""
+        for p in self.players:
+            if (p.piece == "AntimagicalAthlete"
+                    and p is not character
+                    and not p.finished
+                    and p not in self.eliminated_players
+                    and character.position > p.position):
+                return True
+        return False
+
+    def _take_turn_or_stun(self, player, play_by_play_lines):
+        """Take the player's turn, unless an active Stunner is within 1 space.
+        Stun completely skips the turn (NOT a trip — no abilities fire, no
+        Trip status is consumed)."""
+        stunner = self._find_active_stunner_near(player)
+        if stunner is not None:
+            play_by_play_lines.append(
+                f"{player.name} ({player.piece}) is stunned by "
+                f"{stunner.name} ({stunner.piece}) and skips their turn."
+            )
+            stunner.register_ability_use(self, play_by_play_lines, description="Stunner")
+            return
+        player.take_turn(game=self, play_by_play_lines=play_by_play_lines)
+
+    def _find_active_stunner_near(self, player):
+        for p in self.players:
+            if (p.piece == "Stunner"
+                    and p is not player
+                    and not p.finished
+                    and p not in self.eliminated_players
+                    and abs(p.position - player.position) <= 1):
+                return p
+        return None
+
     def next_player(self):
         self.current_player_index = (self.current_player_index + 1) % len(self.turn_order)
         self._scoocher_recursion_depth = 0
@@ -163,6 +211,8 @@ class Game:
         return self.players[self.turn_order[self.current_player_index]]
 
     def should_game_end(self, play_by_play_lines):
+        if getattr(self, 'race_cancelled', False):
+            return True
         if len(self.finished_players) >= 2 or len(self.players) - len(self.finished_players) - len(self.eliminated_players) <= 1:
             return True
         for p in self.players:
@@ -308,6 +358,11 @@ class Game:
         Returns:
             Result of the action (typically None or a modified roll value)
         """
+        # AntimagicalAthlete: racers ahead of Antimag have no powers.
+        # MOVEMENT is special — it's the core mechanic, not a "power" per se,
+        # so we always allow it. Other phases skip when suppressed.
+        if phase != PowerPhase.MOVEMENT and self.is_power_suppressed_for(power_owner):
+            return None
         try:
             if phase == PowerPhase.PRE_ROLL:
                 # Only current player executes pre-roll actions
@@ -379,7 +434,7 @@ def _run_single_simulation(character_names, board_type=DEFAULT_BOARD_TYPE, rando
     play_by_play_lines.insert(0, f"Board: {game.board.get_display_name()}")
     return turns, final_placements, play_by_play_lines, game.board.board_type
 
-def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False):
+def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end"):
     """Run multiple simulations and return statistics with proper ability tracking.
 
     Args:
@@ -394,10 +449,12 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
     
     try:
         all_turns = []
+        turns_by_board = {"Mild": [], "Wild": []}
         finish_positions = {char: [] for char in character_abilities.keys()}
         ability_activations = {char: [] for char in character_abilities.keys()}
         appearance_count = {char: 0 for char in character_abilities.keys()}  # Track appearances
         chip_statistics = {char: [] for char in character_abilities.keys()}  # Track chip statistics
+        win_counts = {char: 0 for char in character_abilities.keys()}  # Track 1st-place finishes
 
         # Only collect detailed logs if requested (saves memory for Streamlit)
         all_play_by_play = [] if collect_detailed_logs else None
@@ -406,11 +463,13 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
         # Track board type usage
         board_type_counts = {"Mild": 0, "Wild": 0}
         
+        sampling_pool = allowed_characters if allowed_characters else list(character_abilities.keys())
+
         for i in range(num_simulations):
-            selected_characters = fixed_characters if fixed_characters else random.sample(list(character_abilities.keys()), num_players)
+            selected_characters = fixed_characters if fixed_characters else random.sample(sampling_pool, num_players)
             
             # Run the simulation with the specified board type
-            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order)
+            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing)
             play_by_play_lines = []
             turns, final_placements = game.run(play_by_play_lines)
             
@@ -421,6 +480,8 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
             # Track which board type was used
             if used_board_type in board_type_counts:
                 board_type_counts[used_board_type] += 1
+            if used_board_type in turns_by_board:
+                turns_by_board[used_board_type].append(turns)
                 
             # Count appearances for each character in this race
             for char in selected_characters:
@@ -480,7 +541,10 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
             all_turns.append(turns)
             
             for place, player in final_placements:
-                finish_positions[player.piece].append(int(place[:-2]))
+                pos = int(place[:-2])
+                finish_positions[player.piece].append(pos)
+                if pos == 1:
+                    win_counts[player.piece] += 1
         
         average_turns = sum(all_turns) / num_simulations if all_turns else 0
         average_finish_positions = {char: (sum(positions) / len(positions)) if positions else None for char, positions in finish_positions.items()}
@@ -539,7 +603,10 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
         
         # Return empty list for play-by-play if detailed logs weren't collected
         play_by_play_result = all_play_by_play if collect_detailed_logs else []
-        return average_turns, average_finish_positions, play_by_play_result, average_ability_activations, appearance_count, average_chip_stats, board_type_counts
+        average_turns_by_board = {
+            bt: (sum(t) / len(t)) if t else None for bt, t in turns_by_board.items()
+        }
+        return average_turns, average_finish_positions, play_by_play_result, average_ability_activations, appearance_count, average_chip_stats, board_type_counts, win_counts, average_turns_by_board
     finally:
         # Restore stdout
         sys.stdout = original_stdout
