@@ -58,6 +58,16 @@ from characters.mole import Mole
 from characters.stunner import Stunner
 from characters.stepdad import Stepdad
 from characters.antimagicalathlete import AntimagicalAthlete
+from characters.hopfrog import Hopfrog
+from characters.sandbag import Sandbag
+from characters.understudy import Understudy
+from characters.zipper import Zipper
+from characters.apprentice import Apprentice
+from characters.blackhole import BlackHole
+from characters.buttinsky import Buttinsky
+from characters.highroller import HighRoller
+from characters.showboat import ShowBoat
+from characters.hotel import Hotel
 
 character_abilities = {
     "HugeBaby": HugeBaby,
@@ -113,12 +123,22 @@ character_abilities = {
     "Stunner": Stunner,
     "Stepdad": Stepdad,
     "AntimagicalAthlete": AntimagicalAthlete,
+    "Hopfrog": Hopfrog,
+    "Sandbag": Sandbag,
+    "Understudy": Understudy,
+    "Zipper": Zipper,
+    "Apprentice": Apprentice,
+    "BlackHole": BlackHole,
+    "Buttinsky": Buttinsky,
+    "HighRoller": HighRoller,
+    "ShowBoat": ShowBoat,
+    "Hotel": Hotel,
 }
 
 # Edition options for the frontend toggle. Each character class declares its
 # EDITION on the class itself (default "v1" via Character base).
 EDITIONS = ["V1", "V2", "All"]
-DEFAULT_EDITION = "V1"
+DEFAULT_EDITION = "V2"
 
 
 def get_characters_by_edition(edition):

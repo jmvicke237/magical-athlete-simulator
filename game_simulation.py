@@ -6,11 +6,13 @@ from board import Board
 from power_system import PowerPhase
 
 class Game:
-    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end"):
+    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False):
         self.players = []
         self.prometheus_threshold = prometheus_threshold  # Lead size that triggers Prometheus self-elimination (strict > comparison)
         self.prometheus_check_timing = prometheus_check_timing  # "start" or "end" — when the elimination check fires
         self._prometheus_starting_points = prometheus_starting_points  # Granted as bronze chips after player creation
+        self.highroller_threshold = highroller_threshold  # HighRoller stops rolling once total >= this
+        self._random_starting_bronze = random_starting_bronze  # Each racer gets random 0-5 starting bronze chips
         
         # Handle board creation
         if board:
@@ -28,6 +30,7 @@ class Game:
         self.turn_order = []
         self.current_player_index = 0
         self.race_cancelled = False  # Set by Spoilsport (or similar) to end the race
+        self._last_main_roll = None  # Most recent main-roll value across all players (used by Apprentice)
         
         # Recursion tracking for different operations
         self._recursion_depths = {
@@ -43,7 +46,12 @@ class Game:
         
         self._create_players(character_names, random_turn_order)
 
-        # Grant Prometheus starting bronze chips (each = 1 point = +1 to move)
+        # Random starting bronze chips per racer (0-5 each), applied first.
+        if self._random_starting_bronze:
+            for player in self.players:
+                player.bronze_chips += random.randint(0, 5)
+
+        # Grant Prometheus starting bronze chips (overrides random for Prometheus).
         if self._prometheus_starting_points > 0:
             for player in self.players:
                 if player.piece == "Prometheus":
@@ -131,8 +139,11 @@ class Game:
                         break
                     # Note: post_turn_actions is now handled by POST_TURN phase in take_turn()
 
-                    # Check for queued turns (e.g., Skipper)
-                    if hasattr(self, 'queued_turns') and self.queued_turns:
+                    # Check for queued turns (e.g., Skipper, Hopfrog).
+                    # Loop until empty so chained bonus turns (Hopfrog landing
+                    # one-behind, getting another turn that lands one-behind
+                    # again, etc.) all process before moving to the next player.
+                    while hasattr(self, 'queued_turns') and self.queued_turns:
                         queued_players = self.queued_turns[:]
                         self.queued_turns = []
 
@@ -143,13 +154,21 @@ class Game:
                                 self.current_player_index = self.players.index(queued_player)
                                 if self.should_game_end(play_by_play_lines):
                                     break
+                        if self.should_game_end(play_by_play_lines):
+                            break
 
                 if self.should_game_end(play_by_play_lines):
                     break
                 self.next_player()
 
+        # End-of-race hooks (e.g., Sandbag's no-corner bonus). Antimag
+        # suppression applies — racers ahead of Antimag don't get end-of-race powers.
+        for player in self.players:
+            if not self.is_power_suppressed_for(player):
+                player.on_race_end(self, play_by_play_lines)
+
         play_by_play_lines.append("The race has ended!")
-        
+
         play_by_play_lines.append("\nAbility Activation Summary:")
         for player in self.players:
             play_by_play_lines.append(f"{player.name} ({player.piece}): {player.ability_activations} ability uses")
@@ -434,7 +453,7 @@ def _run_single_simulation(character_names, board_type=DEFAULT_BOARD_TYPE, rando
     play_by_play_lines.insert(0, f"Board: {game.board.get_display_name()}")
     return turns, final_placements, play_by_play_lines, game.board.board_type
 
-def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end"):
+def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False):
     """Run multiple simulations and return statistics with proper ability tracking.
 
     Args:
@@ -469,7 +488,7 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
             selected_characters = fixed_characters if fixed_characters else random.sample(sampling_pool, num_players)
             
             # Run the simulation with the specified board type
-            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing)
+            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, highroller_threshold=highroller_threshold, random_starting_bronze=random_starting_bronze)
             play_by_play_lines = []
             turns, final_placements = game.run(play_by_play_lines)
             

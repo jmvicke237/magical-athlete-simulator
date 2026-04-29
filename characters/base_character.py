@@ -88,6 +88,11 @@ class Character:
             context = game.resolve_phase(PowerPhase.DIE_ROLL_TRIGGER, self, play_by_play_lines,
                                         context={'roll': roll})
 
+            # Record this roll for Apprentice's match check on the NEXT racer.
+            # Done after DIE_ROLL_TRIGGER so Apprentice's own check (in their
+            # trigger_on_main_move_roll) compares to the *previous* racer's roll.
+            game._last_main_roll = self.last_roll
+
             # Check if Inchworm or similar set skip_main_move
             if not self.skip_main_move:
                 # PHASE 3: ROLL_MODIFICATION - Modify the roll value
@@ -262,6 +267,12 @@ class Character:
             game._recursion_depths['movement'] -= 1
 
     def post_move_ability(self, game, play_by_play_lines):
+        pass
+
+    def on_race_end(self, game, play_by_play_lines):
+        """Called once per character at the end of the race, before final
+        chip/standings summaries. Default no-op. Used by characters with
+        end-of-race effects (e.g., Sandbag's no-corner bonus)."""
         pass
 
     def on_another_player_move(self, moved_player, game, play_by_play_lines):

@@ -27,8 +27,8 @@ class MagicalAthleteApp:
         self.single_race_tab = ttk.Frame(self.tab_control)
         self.character_analysis_tab = ttk.Frame(self.tab_control)
 
-        self.tab_control.add(self.tournament_tab, text="Tournament Simulation")
         self.tab_control.add(self.single_race_tab, text="Single Race Simulation")
+        self.tab_control.add(self.tournament_tab, text="Tournament Simulation")
         self.tab_control.add(self.character_analysis_tab, text="Character Analysis")
 
         self.tab_control.pack(expand=1, fill="both")
@@ -93,12 +93,12 @@ class MagicalAthleteApp:
         
         # Number of simulations
         ttk.Label(left_frame, text="Number of Simulations:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.num_simulations_var = tk.IntVar(value=100)
-        ttk.Spinbox(left_frame, from_=1, to=10000, textvariable=self.num_simulations_var, width=6).grid(row=0, column=1, padx=5, pady=5, sticky="w")
-        
+        self.num_simulations_var = tk.IntVar(value=10000)
+        ttk.Spinbox(left_frame, from_=1, to=100000, textvariable=self.num_simulations_var, width=6).grid(row=0, column=1, padx=5, pady=5, sticky="w")
+
         # Number of racers
         ttk.Label(left_frame, text="Number of Racers:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        self.num_racers_var = tk.IntVar(value=4)
+        self.num_racers_var = tk.IntVar(value=5)
         ttk.Spinbox(left_frame, from_=2, to=10, textvariable=self.num_racers_var, width=5).grid(row=1, column=1, padx=5, pady=5, sticky="w")
         
         # Board type selection (checkboxes)
@@ -143,18 +143,27 @@ class MagicalAthleteApp:
         ttk.Spinbox(left_frame, from_=0, to=30, textvariable=self.prometheus_threshold_var, width=5).grid(row=6, column=1, padx=5, pady=5, sticky="w")
 
         ttk.Label(left_frame, text="Prometheus starting points:").grid(row=7, column=0, padx=5, pady=5, sticky="w")
-        self.prometheus_starting_points_var = tk.IntVar(value=0)
+        self.prometheus_starting_points_var = tk.IntVar(value=3)
         ttk.Spinbox(left_frame, from_=0, to=30, textvariable=self.prometheus_starting_points_var, width=5).grid(row=7, column=1, padx=5, pady=5, sticky="w")
 
         ttk.Label(left_frame, text="Prometheus check at:").grid(row=8, column=0, padx=5, pady=5, sticky="nw")
-        self.prometheus_check_timing_var = tk.StringVar(value="end")
+        self.prometheus_check_timing_var = tk.StringVar(value="start")
         check_timing_frame = ttk.Frame(left_frame)
         check_timing_frame.grid(row=8, column=1, padx=5, pady=5, sticky="w")
         ttk.Radiobutton(check_timing_frame, text="Start of turn", variable=self.prometheus_check_timing_var, value="start").pack(anchor="w")
         ttk.Radiobutton(check_timing_frame, text="End of turn", variable=self.prometheus_check_timing_var, value="end").pack(anchor="w")
 
+        # HighRoller riskiness — total threshold to stop rolling. Higher = riskier.
+        ttk.Label(left_frame, text="HighRoller stop-at:").grid(row=9, column=0, padx=5, pady=5, sticky="w")
+        self.highroller_threshold_var = tk.IntVar(value=8)
+        ttk.Spinbox(left_frame, from_=1, to=30, textvariable=self.highroller_threshold_var, width=5).grid(row=9, column=1, padx=5, pady=5, sticky="w")
+
+        # Random starting bronze chips per racer (0-5)
+        self.random_starting_bronze_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(left_frame, text="Random starting bronze (0-5 each racer)", variable=self.random_starting_bronze_var).grid(row=10, column=0, columnspan=2, padx=5, pady=5, sticky="w")
+
         # Run button
-        ttk.Button(left_frame, text="Run Race Simulations", command=self._run_race_simulations).grid(row=9, column=0, columnspan=2, padx=5, pady=10)
+        ttk.Button(left_frame, text="Run Race Simulations", command=self._run_race_simulations).grid(row=11, column=0, columnspan=2, padx=5, pady=10)
         
         # Right panel - Results
         right_frame = ttk.LabelFrame(self.single_race_tab, text="Race Results")
@@ -482,6 +491,8 @@ class MagicalAthleteApp:
         prometheus_threshold = self.prometheus_threshold_var.get()
         prometheus_starting_points = self.prometheus_starting_points_var.get()
         prometheus_check_timing = self.prometheus_check_timing_var.get()
+        highroller_threshold = self.highroller_threshold_var.get()
+        random_starting_bronze = self.random_starting_bronze_var.get()
         if len(allowed) < num_racers:
             messagebox.showerror(
                 "Not enough racers",
@@ -510,7 +521,7 @@ class MagicalAthleteApp:
                 # Updated to handle the additional returns including chip statistics and board type counts
                 # collect_detailed_logs=True because frontend has an export logs feature
                 average_turns, average_finish_positions, all_play_by_play, ability_activations, appearance_count, chip_stats, board_type_counts, win_counts, turns_by_board = run_simulations(
-                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing
+                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, highroller_threshold=highroller_threshold, random_starting_bronze=random_starting_bronze
                 )
 
                 # Display results with ability data included
