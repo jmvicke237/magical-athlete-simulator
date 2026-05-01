@@ -7,13 +7,15 @@ from power_system import PowerPhase
 from debug_utils import TurnEventCapExceeded
 
 class Game:
-    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False):
+    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=0, spoilsport_threshold=3):
         self.players = []
         self.prometheus_threshold = prometheus_threshold  # Lead size that triggers Prometheus self-elimination (strict > comparison)
         self.prometheus_check_timing = prometheus_check_timing  # "start" or "end" — when the elimination check fires
         self._prometheus_starting_points = prometheus_starting_points  # Granted as bronze chips after player creation
         self.highroller_threshold = highroller_threshold  # HighRoller stops rolling once total >= this
         self._random_starting_bronze = random_starting_bronze  # Each racer gets random 0-5 starting bronze chips
+        self._antimag_main_move_penalty = max(0, int(antimag_main_move_penalty))  # Subtracted from the main-move spaces of any racer strictly ahead of an active AntimagicalAthlete; 0 disables.
+        self.spoilsport_threshold = max(1, int(spoilsport_threshold))  # Minimum lead (in spaces) every other racer must have over Spoilsport before they cancel the race.
         
         # Handle board creation
         if board:
@@ -222,6 +224,18 @@ class Game:
                     and character.position > p.position):
                 return True
         return False
+
+    def get_antimag_main_move_penalty(self, character):
+        """Magnitude (>=0) to subtract from the given character's main-move
+        spaces when they are strictly ahead of any active AntimagicalAthlete.
+        Returns 0 if the toggle is off, no Antimag is active, or the character
+        isn't ahead. Reuses is_power_suppressed_for for the position check so
+        the rule stays in lockstep with power suppression."""
+        if self._antimag_main_move_penalty <= 0:
+            return 0
+        if self.is_power_suppressed_for(character):
+            return self._antimag_main_move_penalty
+        return 0
 
     def _take_turn_or_stun(self, player, play_by_play_lines):
         """Take the player's turn, unless an active Stunner is within 1 space.
@@ -543,7 +557,7 @@ def _run_single_simulation(character_names, board_type=DEFAULT_BOARD_TYPE, rando
     play_by_play_lines.insert(0, f"Board: {game.board.get_display_name()}")
     return turns, final_placements, play_by_play_lines, game.board.board_type
 
-def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False):
+def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=0, spoilsport_threshold=3):
     """Run multiple simulations and return statistics with proper ability tracking.
 
     Args:
@@ -580,7 +594,7 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
             # Run the simulation with the specified board type.
             # Per-race log lines are capped to keep memory bounded with V1+V2
             # reactive cascades (Mole+Romantic fan-out + bonus turns).
-            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, highroller_threshold=highroller_threshold, random_starting_bronze=random_starting_bronze)
+            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, highroller_threshold=highroller_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold)
             play_by_play_lines = _CappedLogList(cap=5000) if collect_detailed_logs else _CappedLogList(cap=500)
             turns, final_placements = game.run(play_by_play_lines)
             

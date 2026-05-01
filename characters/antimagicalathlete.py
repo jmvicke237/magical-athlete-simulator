@@ -17,9 +17,16 @@ class AntimagicalAthlete(Character):
       - Weremouth's mid-pass elimination loop
       - Mole's _maybe_warp
 
+    Optional simulator buff (off by default): Game.get_antimag_main_move_penalty
+    additionally subtracts N spaces from the main-move of any racer ahead of
+    Antimag. The penalty is configured via the antimag_main_move_penalty toggle
+    in the Streamlit / Tkinter frontends and applied in base.take_turn after
+    the multiplier, clamped to 0.
+
     Known limitations: characters with overridden main_roll (Diceman, Legs)
     still use their override even when ahead — main_roll dispatch isn't
-    centralized through a hookable check.
+    centralized through a hookable check. The penalty toggle DOES still apply
+    to those characters since it lives in take_turn after main_roll.
     """
 
     POWER_PHASES = set()

@@ -109,6 +109,20 @@ class Character:
                     )
                     roll = new_roll
 
+                # AntimagicalAthlete buff toggle: racers strictly ahead of an
+                # active Antimag also lose N from their main-move spaces.
+                # Applied after the multiplier so it lands on the final value
+                # the racer is about to move; clamp at 0 so a small roll just
+                # becomes a no-move rather than backwards motion.
+                antimag_penalty = game.get_antimag_main_move_penalty(self)
+                if antimag_penalty > 0:
+                    new_roll = max(0, roll - antimag_penalty)
+                    if new_roll != roll:
+                        play_by_play_lines.append(
+                            f"  {self.name} ({self.piece}) is ahead of AntimagicalAthlete: -{antimag_penalty} main move ({roll} -> {new_roll})"
+                        )
+                    roll = new_roll
+
                 self.last_roll = roll
 
                 # PHASE 4: MOVEMENT - Execute the move

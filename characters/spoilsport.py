@@ -4,9 +4,10 @@ from .base_character import Character
 from power_system import PowerPhase
 
 class Spoilsport(Character):
-    """Before my main move: if every other (non-eliminated) racer is 3+ spaces ahead,
-    the race is cancelled. I get 1 bronze chip (1 point). Gold and silver chips
-    already awarded for 1st/2nd place are revoked — no one gets placement points."""
+    """Before my main move: if every other (non-eliminated) racer is N+ spaces
+    ahead (default N=3, configurable via Game.spoilsport_threshold), the race
+    is cancelled. I get 1 bronze chip (1 point). Gold and silver chips already
+    awarded for 1st/2nd place are revoked — no one gets placement points."""
 
     POWER_PHASES = {PowerPhase.PRE_ROLL}
     EDITION = "v2"
@@ -22,11 +23,12 @@ class Spoilsport(Character):
         if not contenders:
             return  # alone — nothing to cancel
 
-        if not all((p.position - self.position) >= 3 for p in contenders):
+        threshold = getattr(game, "spoilsport_threshold", 3)
+        if not all((p.position - self.position) >= threshold for p in contenders):
             return
 
         play_by_play_lines.append(
-            f"{self.name} ({self.piece}) calls it off — every other racer is 3+ spaces ahead. "
+            f"{self.name} ({self.piece}) calls it off — every other racer is {threshold}+ spaces ahead. "
             f"The race is cancelled!"
         )
 

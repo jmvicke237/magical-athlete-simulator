@@ -114,7 +114,7 @@ with tab_race:
                 index=0,
                 help="When in the turn cycle Prometheus checks point totals.",
             )
-        col_hr, col_rsb = st.columns(2)
+        col_hr, col_rsb, col_anti, col_spoil = st.columns(4)
         with col_hr:
             highroller_threshold = st.number_input(
                 "HighRoller stop-at",
@@ -130,6 +130,31 @@ with tab_race:
                 value=False,
                 help="Each racer starts with 0–4 bronze chips (excluded from "
                      "the per-race points-earned average).",
+            )
+        with col_anti:
+            antimag_main_move_penalty = st.number_input(
+                "Antimag main-move penalty",
+                min_value=0,
+                max_value=6,
+                value=0,
+                step=1,
+                help="Spaces subtracted from the main-move of any racer "
+                     "strictly ahead of an active AntimagicalAthlete. 0 = off "
+                     "(power suppression only). 1+ stacks the penalty on top "
+                     "of the existing 'no powers ahead of Antimag' rule.",
+            )
+        with col_spoil:
+            spoilsport_threshold = st.number_input(
+                "Spoilsport cancel-at",
+                min_value=1,
+                max_value=20,
+                value=3,
+                step=1,
+                help="Minimum lead (in spaces) every other non-eliminated "
+                     "racer must have over Spoilsport before they cancel the "
+                     "race. Default 3 matches the printed card; raise to make "
+                     "Spoilsport more patient, lower to make them quicker to "
+                     "rage-quit.",
             )
 
     # ---- Run button -------------------------------------------------------
@@ -192,6 +217,8 @@ with tab_race:
                 prometheus_check_timing=prometheus_check_timing,
                 highroller_threshold=int(highroller_threshold),
                 random_starting_bronze=random_starting_bronze,
+                antimag_main_move_penalty=int(antimag_main_move_penalty),
+                spoilsport_threshold=int(spoilsport_threshold),
             )
 
         st.success(f"Completed {num_simulations} simulations.")

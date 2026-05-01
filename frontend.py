@@ -163,8 +163,20 @@ class MagicalAthleteApp:
         self.random_starting_bronze_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(left_frame, text="Random starting bronze (0-5 each racer)", variable=self.random_starting_bronze_var).grid(row=10, column=0, columnspan=2, padx=5, pady=5, sticky="w")
 
+        # AntimagicalAthlete buff: spaces subtracted from main-move of any
+        # racer ahead of an active Antimag. 0 = off (power suppression only).
+        ttk.Label(left_frame, text="Antimag main-move penalty:").grid(row=11, column=0, padx=5, pady=5, sticky="w")
+        self.antimag_main_move_penalty_var = tk.IntVar(value=0)
+        ttk.Spinbox(left_frame, from_=0, to=6, textvariable=self.antimag_main_move_penalty_var, width=5).grid(row=11, column=1, padx=5, pady=5, sticky="w")
+
+        # Spoilsport cancel threshold: minimum lead (in spaces) every other
+        # racer must have over Spoilsport before the race is cancelled.
+        ttk.Label(left_frame, text="Spoilsport cancel-at:").grid(row=12, column=0, padx=5, pady=5, sticky="w")
+        self.spoilsport_threshold_var = tk.IntVar(value=3)
+        ttk.Spinbox(left_frame, from_=1, to=20, textvariable=self.spoilsport_threshold_var, width=5).grid(row=12, column=1, padx=5, pady=5, sticky="w")
+
         # Run button
-        ttk.Button(left_frame, text="Run Race Simulations", command=self._run_race_simulations).grid(row=11, column=0, columnspan=2, padx=5, pady=10)
+        ttk.Button(left_frame, text="Run Race Simulations", command=self._run_race_simulations).grid(row=13, column=0, columnspan=2, padx=5, pady=10)
         
         # Right panel - Results
         right_frame = ttk.LabelFrame(self.single_race_tab, text="Race Results")
@@ -495,6 +507,8 @@ class MagicalAthleteApp:
         prometheus_check_timing = self.prometheus_check_timing_var.get()
         highroller_threshold = self.highroller_threshold_var.get()
         random_starting_bronze = self.random_starting_bronze_var.get()
+        antimag_main_move_penalty = self.antimag_main_move_penalty_var.get()
+        spoilsport_threshold = self.spoilsport_threshold_var.get()
         if len(allowed) < num_racers:
             messagebox.showerror(
                 "Not enough racers",
@@ -523,7 +537,7 @@ class MagicalAthleteApp:
                 # Updated to handle the additional returns including chip statistics and board type counts
                 # collect_detailed_logs=True because frontend has an export logs feature
                 average_turns, average_finish_positions, all_play_by_play, ability_activations, appearance_count, chip_stats, board_type_counts, win_counts, turns_by_board = run_simulations(
-                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, highroller_threshold=highroller_threshold, random_starting_bronze=random_starting_bronze
+                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, highroller_threshold=highroller_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold
                 )
 
                 # Display results with ability data included
