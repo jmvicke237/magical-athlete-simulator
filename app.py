@@ -114,7 +114,7 @@ with tab_race:
                 index=0,
                 help="When in the turn cycle Prometheus checks point totals.",
             )
-        col_hr, col_rsb, col_anti, col_spoil = st.columns(4)
+        col_hr, col_rsb, col_anti, col_spoil, col_peng = st.columns(5)
         with col_hr:
             highroller_threshold = st.number_input(
                 "HighRoller stop-at",
@@ -155,6 +155,19 @@ with tab_race:
                      "race. Default 3 matches the printed card; raise to make "
                      "Spoilsport more patient, lower to make them quicker to "
                      "rage-quit.",
+            )
+        with col_peng:
+            penguin_recovery_move = st.slider(
+                "Penguin recovery move",
+                min_value=0,
+                max_value=12,
+                value=3,
+                step=1,
+                help="Spaces a tripped Penguin auto-moves on their recovery "
+                     "turn (instead of skipping the main move). 0 = off "
+                     "(behaves like a normal racer — skips main move when "
+                     "tripped). Bypasses the roll pipeline, so Gunk/Coach/etc. "
+                     "don't modify it.",
             )
 
     # ---- Run button -------------------------------------------------------
@@ -219,6 +232,7 @@ with tab_race:
                 random_starting_bronze=random_starting_bronze,
                 antimag_main_move_penalty=int(antimag_main_move_penalty),
                 spoilsport_threshold=int(spoilsport_threshold),
+                penguin_recovery_move=int(penguin_recovery_move),
             )
 
         st.success(f"Completed {num_simulations} simulations.")

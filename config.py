@@ -68,6 +68,7 @@ from characters.buttinsky import Buttinsky
 from characters.highroller import HighRoller
 from characters.showboat import ShowBoat
 from characters.hotel import Hotel
+from characters.penguin import Penguin
 
 character_abilities = {
     "HugeBaby": HugeBaby,
@@ -133,6 +134,7 @@ character_abilities = {
     "HighRoller": HighRoller,
     "ShowBoat": ShowBoat,
     "Hotel": Hotel,
+    "Penguin": Penguin,
 }
 
 # Edition options for the frontend toggle. Each character class declares its
