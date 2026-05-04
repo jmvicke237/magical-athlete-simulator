@@ -114,7 +114,7 @@ with tab_race:
                 index=0,
                 help="When in the turn cycle Prometheus checks point totals.",
             )
-        col_hr, col_rsb, col_anti, col_spoil, col_peng = st.columns(5)
+        col_hr, col_rsb, col_anti, col_spoil, col_peng, col_buddy = st.columns(6)
         with col_hr:
             highroller_threshold = st.number_input(
                 "HighRoller stop-at",
@@ -168,6 +168,19 @@ with tab_race:
                      "(behaves like a normal racer — skips main move when "
                      "tripped). Bypasses the roll pipeline, so Gunk/Coach/etc. "
                      "don't modify it.",
+            )
+        with col_buddy:
+            buddy_warp_range = st.slider(
+                "Buddy warp range",
+                min_value=0,
+                max_value=15,
+                value=3,
+                step=1,
+                help="Max distance (in spaces) between Buddy and their picked "
+                     "friend that allows the pre-Main-Move warp to fire. "
+                     "Default 3 matches the printed card. 0 = warp disabled "
+                     "(Buddy still picks a friend at race start, just never "
+                     "warps).",
             )
 
     # ---- Run button -------------------------------------------------------
@@ -233,6 +246,7 @@ with tab_race:
                 antimag_main_move_penalty=int(antimag_main_move_penalty),
                 spoilsport_threshold=int(spoilsport_threshold),
                 penguin_recovery_move=int(penguin_recovery_move),
+                buddy_warp_range=int(buddy_warp_range),
             )
 
         st.success(f"Completed {num_simulations} simulations.")
