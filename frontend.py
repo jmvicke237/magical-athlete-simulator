@@ -109,9 +109,11 @@ class MagicalAthleteApp:
 
         self.board_mild_var = tk.BooleanVar(value=True)
         self.board_wild_var = tk.BooleanVar(value=True)
+        self.board_sportals_var = tk.BooleanVar(value=False)
 
         ttk.Checkbutton(board_frame, text="Mild", variable=self.board_mild_var).pack(anchor="w")
         ttk.Checkbutton(board_frame, text="Wild", variable=self.board_wild_var).pack(anchor="w")
+        ttk.Checkbutton(board_frame, text="Sportals", variable=self.board_sportals_var).pack(anchor="w")
         
         # Edition selection
         ttk.Label(left_frame, text="Edition:").grid(row=3, column=0, padx=5, pady=5, sticky="nw")
@@ -187,8 +189,13 @@ class MagicalAthleteApp:
         self.buddy_warp_range_var = tk.IntVar(value=3)
         ttk.Spinbox(left_frame, from_=0, to=15, textvariable=self.buddy_warp_range_var, width=5).grid(row=14, column=1, padx=5, pady=5, sticky="w")
 
+        # Penguin alt mode: trigger on share-space, recover via doubled roll
+        # (instead of trip-on-pass + fixed-N recovery).
+        self.penguin_alt_mode_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(left_frame, text="Penguin alt mode (share-space + doubled-roll recovery)", variable=self.penguin_alt_mode_var).grid(row=15, column=0, columnspan=2, padx=5, pady=5, sticky="w")
+
         # Run button
-        ttk.Button(left_frame, text="Run Race Simulations", command=self._run_race_simulations).grid(row=15, column=0, columnspan=2, padx=5, pady=10)
+        ttk.Button(left_frame, text="Run Race Simulations", command=self._run_race_simulations).grid(row=16, column=0, columnspan=2, padx=5, pady=10)
         
         # Right panel - Results
         right_frame = ttk.LabelFrame(self.single_race_tab, text="Race Results")
@@ -383,7 +390,7 @@ class MagicalAthleteApp:
         if all_turns:
             avg_total = sum(all_turns) / len(all_turns)
             self.tournament_results_text.insert(tk.END, f"Average number of turns per race: {avg_total:.2f}\n")
-            for bt in ("Mild", "Wild"):
+            for bt in ("Mild", "Wild", "Sportals"):
                 bt_turns = [r["turns"] for r in race_results if r.get("board_type") == bt and "turns" in r]
                 if bt_turns:
                     self.tournament_results_text.insert(tk.END,
@@ -494,22 +501,28 @@ class MagicalAthleteApp:
         num_simulations = self.num_simulations_var.get()
         num_racers = self.num_racers_var.get()
 
-        # Determine board type from checkboxes
-        mild_selected = self.board_mild_var.get()
-        wild_selected = self.board_wild_var.get()
+        # Determine board type from checkboxes. Multi-select uses
+        # board_type="Random" + an explicit pool so Sportals only mixes
+        # in when the user opted in.
+        selected_boards = []
+        if self.board_mild_var.get():
+            selected_boards.append("Mild")
+        if self.board_wild_var.get():
+            selected_boards.append("Wild")
+        if self.board_sportals_var.get():
+            selected_boards.append("Sportals")
 
-        if not mild_selected and not wild_selected:
+        if not selected_boards:
             messagebox.showerror("Error", "Please select at least one board type.")
             return
-        elif mild_selected and wild_selected:
+        if len(selected_boards) == 1:
+            board_type = selected_boards[0]
+            random_board_pool = None
+            board_desc = f"{board_type} board"
+        else:
             board_type = "Random"
-            board_desc = "Mild and Wild boards (random)"
-        elif mild_selected:
-            board_type = "Mild"
-            board_desc = "Mild board"
-        else:  # wild_selected
-            board_type = "Wild"
-            board_desc = "Wild board"
+            random_board_pool = selected_boards
+            board_desc = " / ".join(selected_boards) + " (random)"
 
         # Get edition and the allowed character pool
         edition = self.race_edition_var.get()
@@ -523,6 +536,7 @@ class MagicalAthleteApp:
         spoilsport_threshold = self.spoilsport_threshold_var.get()
         penguin_recovery_move = self.penguin_recovery_move_var.get()
         buddy_warp_range = self.buddy_warp_range_var.get()
+        penguin_alt_mode = self.penguin_alt_mode_var.get()
         if len(allowed) < num_racers:
             messagebox.showerror(
                 "Not enough racers",
@@ -551,7 +565,7 @@ class MagicalAthleteApp:
                 # Updated to handle the additional returns including chip statistics and board type counts
                 # collect_detailed_logs=True because frontend has an export logs feature
                 average_turns, average_finish_positions, all_play_by_play, ability_activations, appearance_count, chip_stats, board_type_counts, win_counts, turns_by_board = run_simulations(
-                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, highroller_threshold=highroller_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, penguin_recovery_move=penguin_recovery_move, buddy_warp_range=buddy_warp_range
+                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, highroller_threshold=highroller_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, penguin_recovery_move=penguin_recovery_move, buddy_warp_range=buddy_warp_range, penguin_alt_mode=penguin_alt_mode, random_board_pool=random_board_pool
                 )
 
                 # Display results with ability data included
@@ -591,12 +605,10 @@ class MagicalAthleteApp:
         self.race_results_text.insert(tk.END, f"Completed {self.num_simulations_var.get()} simulations with {self.num_racers_var.get()} racers each.\n\n")
         self.race_results_text.insert(tk.END, f"Average number of turns per race: {average_turns:.2f}\n")
         if turns_by_board:
-            mild_avg = turns_by_board.get("Mild")
-            wild_avg = turns_by_board.get("Wild")
-            self.race_results_text.insert(tk.END,
-                f"  Mild board: {mild_avg:.2f}\n" if mild_avg is not None else "  Mild board: —\n")
-            self.race_results_text.insert(tk.END,
-                f"  Wild board: {wild_avg:.2f}\n" if wild_avg is not None else "  Wild board: —\n")
+            for label in ("Mild", "Wild", "Sportals"):
+                avg = turns_by_board.get(label)
+                self.race_results_text.insert(tk.END,
+                    f"  {label} board: {avg:.2f}\n" if avg is not None else f"  {label} board: —\n")
         self.race_results_text.insert(tk.END, "\n")
         
         # Calculate average points and ability triggers per race.

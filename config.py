@@ -70,6 +70,7 @@ from characters.showboat import ShowBoat
 from characters.hotel import Hotel
 from characters.penguin import Penguin
 from characters.buddy import Buddy
+from characters.magicalathlete import MagicalAthlete
 
 character_abilities = {
     "HugeBaby": HugeBaby,
@@ -137,6 +138,7 @@ character_abilities = {
     "Hotel": Hotel,
     "Penguin": Penguin,
     "Buddy": Buddy,
+    "MagicalAthlete": MagicalAthlete,
 }
 
 # Edition options for the frontend toggle. Each character class declares its
@@ -167,5 +169,5 @@ MAX_TURNS = 50
 CORNER_POSITION = 15  # Updated to match new board layout
 
 # Board options
-BOARD_TYPES = ["Mild", "Wild", "Random"]
+BOARD_TYPES = ["Mild", "Wild", "Sportals", "Random"]
 DEFAULT_BOARD_TYPE = "Mild"

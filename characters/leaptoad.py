@@ -76,6 +76,11 @@ class Leaptoad(Character):
             # Set the new position
             self.position = new_position
 
+            # Snapshot Leaptoad's segment BEFORE on_enter so portal warps /
+            # Wild move-spaces inside on_enter can't extend the pass range
+            # used by detect_passes below. Mirrors the same fix in base.move.
+            move_end_local = self.position
+
             if self.position >= game.board.length:
                 self.position = game.board.length
                 game.finish_player(self, play_by_play_lines)
@@ -92,7 +97,7 @@ class Leaptoad(Character):
                 current_space.on_enter(self, game, play_by_play_lines)
 
             # Detect and notify passed racers
-            passed_racers = self.detect_passes(game, original_position, self.position)
+            passed_racers = self.detect_passes(game, original_position, move_end_local)
             for passed_racer in passed_racers:
                 passed_racer.on_being_passed(self, game, play_by_play_lines)
 

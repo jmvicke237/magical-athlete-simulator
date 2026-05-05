@@ -247,6 +247,16 @@ class Character:
             # Clamp position between 0 (Start) and game.board.length (Finish)
             self.position = max(0, min(self.position + spaces, game.board.length))
 
+            # Snapshot this move's segment BEFORE on_enter. on_enter can
+            # trigger nested moves/jumps (Wild move-spaces, Sportals
+            # portals) that overwrite self.previous_position and
+            # self.position — without this snapshot, the pass detection
+            # below would compute against whatever segment the inner
+            # call left behind, missing real passes from the original
+            # move and spuriously detecting warps as passes.
+            move_start = self.previous_position
+            move_end = self.position
+
             if self.position >= game.board.length:
                 self.position = game.board.length
                 game.finish_player(self, play_by_play_lines)
@@ -260,7 +270,7 @@ class Character:
 
             # Detect and notify passed racers (AntimagicalAthlete: passed
             # racers ahead of Antimag have no powers, so on_being_passed skips)
-            passed_racers = self.detect_passes(game, self.previous_position, self.position)
+            passed_racers = self.detect_passes(game, move_start, move_end)
             for passed_racer in passed_racers:
                 if not game.is_power_suppressed_for(passed_racer):
                     passed_racer.on_being_passed(self, game, play_by_play_lines)

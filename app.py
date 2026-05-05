@@ -58,11 +58,21 @@ with tab_race:
 
     # ---- Board type checkboxes -------------------------------------------
     st.write("**Board Types**")
-    col_mild, col_wild = st.columns(2)
+    col_mild, col_wild, col_sportals = st.columns(3)
     with col_mild:
         use_mild = st.checkbox("Mild", value=True)
     with col_wild:
         use_wild = st.checkbox("Wild", value=True)
+    with col_sportals:
+        use_sportals = st.checkbox(
+            "Sportals",
+            value=False,
+            help="Wormhole board: 7 paired portals (4-7, 8-12, 11-15, "
+                 "16-18, 17-22, 20-23, 24-28). Stopping on a portal warps "
+                 "you to its partner. Per warp rules, this doesn't trigger "
+                 "stopping/passing abilities — but share-space effects "
+                 "(Duelist, alt-Penguin) still fire at the destination.",
+        )
 
     # ---- Character selection mode ----------------------------------------
     char_mode = st.radio(
@@ -86,54 +96,55 @@ with tab_race:
         selected_chars = None
 
     # ---- Advanced settings (collapsed by default) ------------------------
+    # Toggles are grouped by character/feature and laid out vertically
+    # inside a fixed-height scrollable container — there are enough now
+    # that a single horizontal row got cramped.
     with st.expander("Advanced settings", expanded=False):
-        col_prom1, col_prom2, col_prom3 = st.columns(3)
-        with col_prom1:
-            prometheus_threshold = st.number_input(
-                "Prometheus threshold",
-                min_value=0,
-                max_value=20,
-                value=3,
-                step=1,
-                help="If Prometheus is in the race, racers below this point "
-                     "total trigger Prometheus's bronze handout.",
-            )
-        with col_prom2:
-            prometheus_starting_points = st.number_input(
-                "Prometheus starting points",
-                min_value=0,
-                max_value=20,
-                value=0,
-                step=1,
-                help="Bronze chips Prometheus starts with.",
-            )
-        with col_prom3:
-            prometheus_check_timing = st.selectbox(
-                "Prometheus check timing",
-                ["end", "start"],
-                index=0,
-                help="When in the turn cycle Prometheus checks point totals.",
-            )
-        col_hr, col_rsb, col_anti, col_spoil, col_peng, col_buddy = st.columns(6)
-        with col_hr:
+        with st.container(height=420):
+            st.markdown("**Prometheus**")
+            col_prom1, col_prom2, col_prom3 = st.columns(3)
+            with col_prom1:
+                prometheus_threshold = st.number_input(
+                    "Threshold",
+                    min_value=0,
+                    max_value=20,
+                    value=3,
+                    step=1,
+                    help="If Prometheus is in the race, racers below this point "
+                         "total trigger Prometheus's bronze handout.",
+                )
+            with col_prom2:
+                prometheus_starting_points = st.number_input(
+                    "Starting points",
+                    min_value=0,
+                    max_value=20,
+                    value=0,
+                    step=1,
+                    help="Bronze chips Prometheus starts with.",
+                )
+            with col_prom3:
+                prometheus_check_timing = st.selectbox(
+                    "Check timing",
+                    ["end", "start"],
+                    index=0,
+                    help="When in the turn cycle Prometheus checks point totals.",
+                )
+
+            st.divider()
+            st.markdown("**HighRoller**")
             highroller_threshold = st.number_input(
-                "HighRoller stop-at",
+                "Stop-at",
                 min_value=2,
                 max_value=12,
                 value=8,
                 step=1,
                 help="HighRoller keeps re-rolling until they hit this total or higher.",
             )
-        with col_rsb:
-            random_starting_bronze = st.checkbox(
-                "Random starting bronze",
-                value=False,
-                help="Each racer starts with 0–4 bronze chips (excluded from "
-                     "the per-race points-earned average).",
-            )
-        with col_anti:
+
+            st.divider()
+            st.markdown("**AntimagicalAthlete**")
             antimag_main_move_penalty = st.number_input(
-                "Antimag main-move penalty",
+                "Main-move penalty",
                 min_value=0,
                 max_value=6,
                 value=0,
@@ -143,9 +154,11 @@ with tab_race:
                      "(power suppression only). 1+ stacks the penalty on top "
                      "of the existing 'no powers ahead of Antimag' rule.",
             )
-        with col_spoil:
+
+            st.divider()
+            st.markdown("**Spoilsport**")
             spoilsport_threshold = st.number_input(
-                "Spoilsport cancel-at",
+                "Cancel-at",
                 min_value=1,
                 max_value=20,
                 value=3,
@@ -156,9 +169,11 @@ with tab_race:
                      "Spoilsport more patient, lower to make them quicker to "
                      "rage-quit.",
             )
-        with col_peng:
+
+            st.divider()
+            st.markdown("**Penguin**")
             penguin_recovery_move = st.slider(
-                "Penguin recovery move",
+                "Recovery move",
                 min_value=0,
                 max_value=12,
                 value=3,
@@ -167,11 +182,24 @@ with tab_race:
                      "turn (instead of skipping the main move). 0 = off "
                      "(behaves like a normal racer — skips main move when "
                      "tripped). Bypasses the roll pipeline, so Gunk/Coach/etc. "
-                     "don't modify it.",
+                     "don't modify it. Only applies to Penguin's default "
+                     "(trip-on-pass) mode; alt mode ignores this and doubles "
+                     "the roll instead.",
             )
-        with col_buddy:
+            penguin_alt_mode = st.checkbox(
+                "Alt mode (share-space + doubled-roll recovery)",
+                value=False,
+                help="Switches Penguin's rule set. OFF (default): trip when "
+                     "passed, recover via the slider above. ON: trip when "
+                     "stopping on a racer or when a racer stops on you, "
+                     "recover by moving DOUBLE your roll (slider above is "
+                     "ignored).",
+            )
+
+            st.divider()
+            st.markdown("**Buddy**")
             buddy_warp_range = st.slider(
-                "Buddy warp range",
+                "Warp range",
                 min_value=0,
                 max_value=15,
                 value=3,
@@ -183,12 +211,21 @@ with tab_race:
                      "warps).",
             )
 
+            st.divider()
+            st.markdown("**Race-wide**")
+            random_starting_bronze = st.checkbox(
+                "Random starting bronze (0–4 each racer)",
+                value=False,
+                help="Each racer starts with 0–4 bronze chips (excluded from "
+                     "the per-race points-earned average).",
+            )
+
     # ---- Run button -------------------------------------------------------
     run_clicked = st.button("Run Simulations", type="primary")
 
     if run_clicked:
         # Validate inputs
-        if not use_mild and not use_wild:
+        if not (use_mild or use_wild or use_sportals):
             st.error("Please select at least one board type.")
             st.stop()
 
@@ -210,13 +247,23 @@ with tab_race:
                 )
                 st.stop()
 
-        # Determine board parameter for run_simulations
-        if use_mild and use_wild:
-            board_type = "Random"
-        elif use_mild:
-            board_type = "Mild"
+        # Determine board parameter for run_simulations.
+        # If exactly one is selected, pass that board_type directly. If
+        # multiple are selected, pass "Random" + the explicit pool so
+        # Sportals only mixes in when the user opted in.
+        selected_boards = []
+        if use_mild:
+            selected_boards.append("Mild")
+        if use_wild:
+            selected_boards.append("Wild")
+        if use_sportals:
+            selected_boards.append("Sportals")
+        if len(selected_boards) == 1:
+            board_type = selected_boards[0]
+            random_board_pool = None
         else:
-            board_type = "Wild"
+            board_type = "Random"
+            random_board_pool = selected_boards
 
         with st.spinner(f"Running {num_simulations} simulations…"):
             (
@@ -247,6 +294,8 @@ with tab_race:
                 spoilsport_threshold=int(spoilsport_threshold),
                 penguin_recovery_move=int(penguin_recovery_move),
                 buddy_warp_range=int(buddy_warp_range),
+                penguin_alt_mode=penguin_alt_mode,
+                random_board_pool=random_board_pool,
             )
 
         st.success(f"Completed {num_simulations} simulations.")
@@ -254,12 +303,15 @@ with tab_race:
         # ---- Top-line metrics --------------------------------------------
         mild_avg = average_turns_by_board.get("Mild")
         wild_avg = average_turns_by_board.get("Wild")
-        m1, m2, m3, m4, m5 = st.columns(5)
+        sportals_avg = average_turns_by_board.get("Sportals")
+        m1, m2, m3, m4, m5, m6, m7 = st.columns(7)
         m1.metric("Avg turns / race", f"{average_turns:.2f}")
         m2.metric("Mild avg turns", f"{mild_avg:.2f}" if mild_avg is not None else "—")
         m3.metric("Wild avg turns", f"{wild_avg:.2f}" if wild_avg is not None else "—")
-        m4.metric("Mild races", board_type_counts.get("Mild", 0))
-        m5.metric("Wild races", board_type_counts.get("Wild", 0))
+        m4.metric("Sportals avg turns", f"{sportals_avg:.2f}" if sportals_avg is not None else "—")
+        m5.metric("Mild races", board_type_counts.get("Mild", 0))
+        m6.metric("Wild races", board_type_counts.get("Wild", 0))
+        m7.metric("Sportals races", board_type_counts.get("Sportals", 0))
 
         # ---- Character performance table ---------------------------------
         st.subheader("Character Performance")
