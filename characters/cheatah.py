@@ -9,7 +9,12 @@ class Cheatah(Character):
     The player to my right guesses; if they guess correctly, I don't move.
     Doesn't count as a roll, so power triggers (Inchworm, StinkEye, Skipper,
     Weremouth, SilverSpoon) don't fire and roll modifications (Coach, Gunk,
-    Blimp) don't apply."""
+    Blimp) don't apply.
+
+    Variant (Game.cheatah_alt_mode == True): same rules as default,
+    but both Cheatah and the guesser pick from the restricted range
+    4-6 instead of 1-6. Higher floor on movement, but the guess space
+    shrinks to three options (1-in-3 correct vs 1-in-6 baseline)."""
 
     POWER_PHASES = {PowerPhase.PRE_ROLL}
     EDITION = "v2"
@@ -18,8 +23,13 @@ class Cheatah(Character):
         if self.finished or self in game.eliminated_players:
             return
 
-        # Cheatah picks; neighbor (next active player in turn order) guesses.
-        chosen = random.randint(1, 6)
+        # Pick range: default 1-6; alt mode restricts both Cheatah's
+        # chosen value and the guesser's guess to 4-6 (shorter wrong-guess
+        # tail, smaller guess space → higher hit rate).
+        alt_mode = getattr(game, "cheatah_alt_mode", False)
+        low, high = (4, 6) if alt_mode else (1, 6)
+
+        chosen = random.randint(low, high)
         guesser = self._find_right_neighbor(game)
 
         # Suppress the normal roll pipeline (rerolls, triggers, modifications, MOVEMENT)
@@ -27,16 +37,19 @@ class Cheatah(Character):
         self.skip_main_move = True
         self.register_ability_use(game, play_by_play_lines, description="Cheatah")
 
+        range_tag = f" (alt mode, {low}-{high})" if alt_mode else ""
+
         if guesser is None:
             play_by_play_lines.append(
-                f"{self.name} ({self.piece}) sets the die to {chosen} (no neighbor to guess)."
+                f"{self.name} ({self.piece}) sets the die to {chosen}{range_tag} "
+                f"(no neighbor to guess)."
             )
             self.move(game, play_by_play_lines, chosen)
             return
 
-        guess = random.randint(1, 6)
+        guess = random.randint(low, high)
         play_by_play_lines.append(
-            f"{self.name} ({self.piece}) sets the die to {chosen}; "
+            f"{self.name} ({self.piece}) sets the die to {chosen}{range_tag}; "
             f"{guesser.name} ({guesser.piece}) guesses {guess}."
         )
 

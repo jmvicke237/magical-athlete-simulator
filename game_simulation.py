@@ -7,7 +7,7 @@ from power_system import PowerPhase
 from debug_utils import TurnEventCapExceeded
 
 class Game:
-    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=0, spoilsport_threshold=3, penguin_recovery_move=3, buddy_warp_range=3, penguin_alt_mode=False, random_board_pool=None):
+    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=0, spoilsport_threshold=3, penguin_recovery_move=3, buddy_warp_range=3, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
         self.players = []
         self.prometheus_threshold = prometheus_threshold  # Lead size that triggers Prometheus self-elimination (strict > comparison)
         self.prometheus_check_timing = prometheus_check_timing  # "start" or "end" — when the elimination check fires
@@ -19,6 +19,7 @@ class Game:
         self.penguin_recovery_move = max(0, int(penguin_recovery_move))  # Spaces a tripped Penguin auto-moves on a recovery turn; 0 = revert to normal trip skip-main-move behavior.
         self.buddy_warp_range = max(0, int(buddy_warp_range))  # Max distance (inclusive) between Buddy and their picked friend that lets the pre-move warp fire; 0 disables the warp.
         self.penguin_alt_mode = bool(penguin_alt_mode)  # Switches Penguin between default (trip-on-pass, recover via penguin_recovery_move) and alt (trip-on-share-space, recover via doubled roll).
+        self.cheatah_alt_mode = bool(cheatah_alt_mode)  # When True, Cheatah moves double the chosen value on a wrong guess (default: moves the chosen value).
         
         # Handle board creation
         if board:
@@ -565,7 +566,7 @@ def _run_single_simulation(character_names, board_type=DEFAULT_BOARD_TYPE, rando
     play_by_play_lines.insert(0, f"Board: {game.board.get_display_name()}")
     return turns, final_placements, play_by_play_lines, game.board.board_type
 
-def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=0, spoilsport_threshold=3, penguin_recovery_move=3, buddy_warp_range=3, penguin_alt_mode=False, random_board_pool=None):
+def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=0, spoilsport_threshold=3, penguin_recovery_move=3, buddy_warp_range=3, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
     """Run multiple simulations and return statistics with proper ability tracking.
 
     Args:
@@ -602,7 +603,7 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
             # Run the simulation with the specified board type.
             # Per-race log lines are capped to keep memory bounded with V1+V2
             # reactive cascades (Mole+Romantic fan-out + bonus turns).
-            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, highroller_threshold=highroller_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, penguin_recovery_move=penguin_recovery_move, buddy_warp_range=buddy_warp_range, penguin_alt_mode=penguin_alt_mode, random_board_pool=random_board_pool)
+            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, highroller_threshold=highroller_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, penguin_recovery_move=penguin_recovery_move, buddy_warp_range=buddy_warp_range, penguin_alt_mode=penguin_alt_mode, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode)
             play_by_play_lines = _CappedLogList(cap=5000) if collect_detailed_logs else _CappedLogList(cap=500)
             turns, final_placements = game.run(play_by_play_lines)
             

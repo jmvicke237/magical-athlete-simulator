@@ -49,9 +49,9 @@ with tab_race:
             help="V1 = original characters; V2 = expansion; All = both pools.",
         )
     with col_sims:
-        num_simulations = st.slider("Number of Simulations", 1, 10000, 100)
+        num_simulations = st.slider("Number of Simulations", 1, 10000, 10000)
     with col_racers:
-        num_racers = st.slider("Number of Racers", 2, 10, 6)
+        num_racers = st.slider("Number of Racers", 2, 10, 5)
 
     # The set of characters allowed for this edition
     edition_chars = list(get_characters_by_edition(edition).keys())
@@ -66,7 +66,7 @@ with tab_race:
     with col_sportals:
         use_sportals = st.checkbox(
             "Sportals",
-            value=False,
+            value=True,
             help="Wormhole board: 7 paired portals (4-7, 8-12, 11-15, "
                  "16-18, 17-22, 20-23, 24-28). Stopping on a portal warps "
                  "you to its partner. Per warp rules, this doesn't trigger "
@@ -108,7 +108,7 @@ with tab_race:
                     "Threshold",
                     min_value=0,
                     max_value=20,
-                    value=3,
+                    value=2,
                     step=1,
                     help="If Prometheus is in the race, racers below this point "
                          "total trigger Prometheus's bronze handout.",
@@ -118,7 +118,7 @@ with tab_race:
                     "Starting points",
                     min_value=0,
                     max_value=20,
-                    value=0,
+                    value=1,
                     step=1,
                     help="Bronze chips Prometheus starts with.",
                 )
@@ -126,7 +126,7 @@ with tab_race:
                 prometheus_check_timing = st.selectbox(
                     "Check timing",
                     ["end", "start"],
-                    index=0,
+                    index=1,
                     help="When in the turn cycle Prometheus checks point totals.",
                 )
 
@@ -147,7 +147,7 @@ with tab_race:
                 "Main-move penalty",
                 min_value=0,
                 max_value=6,
-                value=0,
+                value=1,
                 step=1,
                 help="Spaces subtracted from the main-move of any racer "
                      "strictly ahead of an active AntimagicalAthlete. 0 = off "
@@ -176,7 +176,7 @@ with tab_race:
                 "Recovery move",
                 min_value=0,
                 max_value=12,
-                value=3,
+                value=6,
                 step=1,
                 help="Spaces a tripped Penguin auto-moves on their recovery "
                      "turn (instead of skipping the main move). 0 = off "
@@ -188,7 +188,7 @@ with tab_race:
             )
             penguin_alt_mode = st.checkbox(
                 "Alt mode (share-space + doubled-roll recovery)",
-                value=False,
+                value=True,
                 help="Switches Penguin's rule set. OFF (default): trip when "
                      "passed, recover via the slider above. ON: trip when "
                      "stopping on a racer or when a racer stops on you, "
@@ -202,7 +202,7 @@ with tab_race:
                 "Warp range",
                 min_value=0,
                 max_value=15,
-                value=3,
+                value=5,
                 step=1,
                 help="Max distance (in spaces) between Buddy and their picked "
                      "friend that allows the pre-Main-Move warp to fire. "
@@ -212,10 +212,24 @@ with tab_race:
             )
 
             st.divider()
+            st.markdown("**Cheatah**")
+            cheatah_alt_mode = st.checkbox(
+                "Alt mode (4–6 only)",
+                value=False,
+                help="OFF (default): Cheatah and the guesser both pick from "
+                     "1–6 (1-in-6 hit rate; wrong-guess move is 1–6). ON: "
+                     "both pick from 4–6 only (1-in-3 hit rate; wrong-guess "
+                     "move is 4–6 — guaranteed-bigger move when guessed "
+                     "wrong, but easier to guess). Either way, this isn't "
+                     "a roll, so Inchworm/Skipper/Weremouth/Gunk etc. don't "
+                     "fire on it.",
+            )
+
+            st.divider()
             st.markdown("**Race-wide**")
             random_starting_bronze = st.checkbox(
                 "Random starting bronze (0–4 each racer)",
-                value=False,
+                value=True,
                 help="Each racer starts with 0–4 bronze chips (excluded from "
                      "the per-race points-earned average).",
             )
@@ -296,6 +310,7 @@ with tab_race:
                 buddy_warp_range=int(buddy_warp_range),
                 penguin_alt_mode=penguin_alt_mode,
                 random_board_pool=random_board_pool,
+                cheatah_alt_mode=cheatah_alt_mode,
             )
 
         st.success(f"Completed {num_simulations} simulations.")

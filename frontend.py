@@ -109,7 +109,7 @@ class MagicalAthleteApp:
 
         self.board_mild_var = tk.BooleanVar(value=True)
         self.board_wild_var = tk.BooleanVar(value=True)
-        self.board_sportals_var = tk.BooleanVar(value=False)
+        self.board_sportals_var = tk.BooleanVar(value=True)
 
         ttk.Checkbutton(board_frame, text="Mild", variable=self.board_mild_var).pack(anchor="w")
         ttk.Checkbutton(board_frame, text="Wild", variable=self.board_wild_var).pack(anchor="w")
@@ -142,11 +142,11 @@ class MagicalAthleteApp:
 
         # Prometheus tweaks (only matter if Prometheus is in the race)
         ttk.Label(left_frame, text="Prometheus elim threshold:").grid(row=6, column=0, padx=5, pady=5, sticky="w")
-        self.prometheus_threshold_var = tk.IntVar(value=3)
+        self.prometheus_threshold_var = tk.IntVar(value=2)
         ttk.Spinbox(left_frame, from_=0, to=30, textvariable=self.prometheus_threshold_var, width=5).grid(row=6, column=1, padx=5, pady=5, sticky="w")
 
         ttk.Label(left_frame, text="Prometheus starting points:").grid(row=7, column=0, padx=5, pady=5, sticky="w")
-        self.prometheus_starting_points_var = tk.IntVar(value=3)
+        self.prometheus_starting_points_var = tk.IntVar(value=1)
         ttk.Spinbox(left_frame, from_=0, to=30, textvariable=self.prometheus_starting_points_var, width=5).grid(row=7, column=1, padx=5, pady=5, sticky="w")
 
         ttk.Label(left_frame, text="Prometheus check at:").grid(row=8, column=0, padx=5, pady=5, sticky="nw")
@@ -162,13 +162,13 @@ class MagicalAthleteApp:
         ttk.Spinbox(left_frame, from_=1, to=30, textvariable=self.highroller_threshold_var, width=5).grid(row=9, column=1, padx=5, pady=5, sticky="w")
 
         # Random starting bronze chips per racer (0-5)
-        self.random_starting_bronze_var = tk.BooleanVar(value=False)
+        self.random_starting_bronze_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(left_frame, text="Random starting bronze (0-5 each racer)", variable=self.random_starting_bronze_var).grid(row=10, column=0, columnspan=2, padx=5, pady=5, sticky="w")
 
         # AntimagicalAthlete buff: spaces subtracted from main-move of any
         # racer ahead of an active Antimag. 0 = off (power suppression only).
         ttk.Label(left_frame, text="Antimag main-move penalty:").grid(row=11, column=0, padx=5, pady=5, sticky="w")
-        self.antimag_main_move_penalty_var = tk.IntVar(value=0)
+        self.antimag_main_move_penalty_var = tk.IntVar(value=1)
         ttk.Spinbox(left_frame, from_=0, to=6, textvariable=self.antimag_main_move_penalty_var, width=5).grid(row=11, column=1, padx=5, pady=5, sticky="w")
 
         # Spoilsport cancel threshold: minimum lead (in spaces) every other
@@ -180,22 +180,27 @@ class MagicalAthleteApp:
         # Penguin recovery move: spaces a tripped Penguin auto-moves on
         # recovery turn. 0 = revert to normal trip skip-main-move behavior.
         ttk.Label(left_frame, text="Penguin recovery move:").grid(row=13, column=0, padx=5, pady=5, sticky="w")
-        self.penguin_recovery_move_var = tk.IntVar(value=3)
+        self.penguin_recovery_move_var = tk.IntVar(value=6)
         ttk.Spinbox(left_frame, from_=0, to=12, textvariable=self.penguin_recovery_move_var, width=5).grid(row=13, column=1, padx=5, pady=5, sticky="w")
 
         # Buddy warp range: max distance to picked friend that allows the
         # pre-Main-Move warp to fire. 0 = warp disabled (still picks a friend).
         ttk.Label(left_frame, text="Buddy warp range:").grid(row=14, column=0, padx=5, pady=5, sticky="w")
-        self.buddy_warp_range_var = tk.IntVar(value=3)
+        self.buddy_warp_range_var = tk.IntVar(value=5)
         ttk.Spinbox(left_frame, from_=0, to=15, textvariable=self.buddy_warp_range_var, width=5).grid(row=14, column=1, padx=5, pady=5, sticky="w")
 
         # Penguin alt mode: trigger on share-space, recover via doubled roll
         # (instead of trip-on-pass + fixed-N recovery).
-        self.penguin_alt_mode_var = tk.BooleanVar(value=False)
+        self.penguin_alt_mode_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(left_frame, text="Penguin alt mode (share-space + doubled-roll recovery)", variable=self.penguin_alt_mode_var).grid(row=15, column=0, columnspan=2, padx=5, pady=5, sticky="w")
 
+        # Cheatah alt mode: wrong guesses move double the chosen value
+        # instead of just the chosen value.
+        self.cheatah_alt_mode_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(left_frame, text="Cheatah alt mode (4-6 only — both choose & guess in 4-6)", variable=self.cheatah_alt_mode_var).grid(row=16, column=0, columnspan=2, padx=5, pady=5, sticky="w")
+
         # Run button
-        ttk.Button(left_frame, text="Run Race Simulations", command=self._run_race_simulations).grid(row=16, column=0, columnspan=2, padx=5, pady=10)
+        ttk.Button(left_frame, text="Run Race Simulations", command=self._run_race_simulations).grid(row=17, column=0, columnspan=2, padx=5, pady=10)
         
         # Right panel - Results
         right_frame = ttk.LabelFrame(self.single_race_tab, text="Race Results")
@@ -537,6 +542,7 @@ class MagicalAthleteApp:
         penguin_recovery_move = self.penguin_recovery_move_var.get()
         buddy_warp_range = self.buddy_warp_range_var.get()
         penguin_alt_mode = self.penguin_alt_mode_var.get()
+        cheatah_alt_mode = self.cheatah_alt_mode_var.get()
         if len(allowed) < num_racers:
             messagebox.showerror(
                 "Not enough racers",
@@ -565,7 +571,7 @@ class MagicalAthleteApp:
                 # Updated to handle the additional returns including chip statistics and board type counts
                 # collect_detailed_logs=True because frontend has an export logs feature
                 average_turns, average_finish_positions, all_play_by_play, ability_activations, appearance_count, chip_stats, board_type_counts, win_counts, turns_by_board = run_simulations(
-                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, highroller_threshold=highroller_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, penguin_recovery_move=penguin_recovery_move, buddy_warp_range=buddy_warp_range, penguin_alt_mode=penguin_alt_mode, random_board_pool=random_board_pool
+                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, highroller_threshold=highroller_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, penguin_recovery_move=penguin_recovery_move, buddy_warp_range=buddy_warp_range, penguin_alt_mode=penguin_alt_mode, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode
                 )
 
                 # Display results with ability data included
