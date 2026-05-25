@@ -88,10 +88,67 @@ class MagicalAthleteApp:
         self.tournament_tab.rowconfigure(0, weight=1)
     
     def _setup_single_race_tab(self):
-        # Left panel - Configuration
-        left_frame = ttk.LabelFrame(self.single_race_tab, text="Race Configuration")
-        left_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-        
+        # Left panel - Configuration. Wrapped in a Canvas + vertical
+        # Scrollbar so the configuration column can grow longer than the
+        # window without forcing the user to resize the whole app — there
+        # are enough toggles now that the run button used to be clipped
+        # on default-sized screens.
+        left_outer = ttk.LabelFrame(self.single_race_tab, text="Race Configuration")
+        left_outer.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        left_outer.rowconfigure(0, weight=1)
+        left_outer.columnconfigure(0, weight=1)
+
+        config_canvas = tk.Canvas(left_outer, borderwidth=0, highlightthickness=0)
+        config_scroll = ttk.Scrollbar(left_outer, orient="vertical", command=config_canvas.yview)
+        config_canvas.configure(yscrollcommand=config_scroll.set)
+        config_canvas.grid(row=0, column=0, sticky="nsew")
+        config_scroll.grid(row=0, column=1, sticky="ns")
+
+        # The inner frame is what the rest of this function treats as
+        # `left_frame` — every existing `left_frame.<thing>` call below
+        # works unchanged because we just rebind the variable.
+        left_frame = ttk.Frame(config_canvas)
+        config_window = config_canvas.create_window((0, 0), window=left_frame, anchor="nw")
+
+        # Update Canvas scrollregion when the inner frame's size changes,
+        # and stretch the inner frame to fill the Canvas width so widgets
+        # don't bunch up on the left edge when the window is wider than
+        # the natural content.
+        def _on_inner_configure(_event):
+            config_canvas.configure(scrollregion=config_canvas.bbox("all"))
+
+        def _on_canvas_configure(event):
+            config_canvas.itemconfigure(config_window, width=event.width)
+
+        left_frame.bind("<Configure>", _on_inner_configure)
+        config_canvas.bind("<Configure>", _on_canvas_configure)
+
+        # Mouse-wheel scrolling — only active while the cursor is over
+        # the configuration panel so it doesn't fight with the results
+        # ScrolledText on the right.
+        def _on_mousewheel(event):
+            # macOS sends event.delta in small units; Windows in 120s;
+            # Linux uses Button-4/-5. Normalize to ±1 line per notch.
+            if event.num == 4:
+                config_canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                config_canvas.yview_scroll(1, "units")
+            else:
+                config_canvas.yview_scroll(-1 * int(event.delta / 120) or (-1 if event.delta > 0 else 1), "units")
+
+        def _bind_wheel(_e):
+            config_canvas.bind_all("<MouseWheel>", _on_mousewheel)
+            config_canvas.bind_all("<Button-4>", _on_mousewheel)
+            config_canvas.bind_all("<Button-5>", _on_mousewheel)
+
+        def _unbind_wheel(_e):
+            config_canvas.unbind_all("<MouseWheel>")
+            config_canvas.unbind_all("<Button-4>")
+            config_canvas.unbind_all("<Button-5>")
+
+        config_canvas.bind("<Enter>", _bind_wheel)
+        config_canvas.bind("<Leave>", _unbind_wheel)
+
         # Number of simulations
         ttk.Label(left_frame, text="Number of Simulations:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.num_simulations_var = tk.IntVar(value=10000)

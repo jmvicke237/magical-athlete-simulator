@@ -6,7 +6,8 @@ from power_system import PowerPhase
 
 class Cheatah(Character):
     """Instead of rolling for my main move, I secretly set my die to any number 1-6.
-    The player to my right guesses; if they guess correctly, I don't move.
+    The player to my right guesses; either way I move the chosen value, but on
+    a correct guess I'm also tripped on my next turn (caught cheating).
     Doesn't count as a roll, so power triggers (Inchworm, StinkEye, Skipper,
     Weremouth, SilverSpoon) don't fire and roll modifications (Coach, Gunk,
     Blimp) don't apply.
@@ -21,6 +22,12 @@ class Cheatah(Character):
 
     def pre_move_action(self, game, play_by_play_lines):
         if self.finished or self in game.eliminated_players:
+            return
+        # If Cheatah was tripped coming into this turn, base.take_turn
+        # already cleared self.tripped and set skip_main_move=True before
+        # PRE_ROLL fired. Skip the cheat — no die-setting, no movement —
+        # otherwise a correct-guess trip from last turn does nothing.
+        if self.skip_main_move:
             return
 
         # Pick range: default 1-6; alt mode restricts both Cheatah's
@@ -54,9 +61,16 @@ class Cheatah(Character):
         )
 
         if guess == chosen:
+            # Correct guess: Cheatah is caught cheating. Still moves the
+            # chosen value this turn, but gets tripped (skips next main
+            # move). self.tripped is set AFTER self.move so the trip
+            # doesn't bleed into anything mid-move.
             play_by_play_lines.append(
-                f"  Correct guess — {self.name} ({self.piece}) doesn't move."
+                f"  Correct guess — {self.name} ({self.piece}) is caught! "
+                f"Moves {chosen} but trips next turn."
             )
+            self.move(game, play_by_play_lines, chosen)
+            self.tripped = True
             return
 
         play_by_play_lines.append(
