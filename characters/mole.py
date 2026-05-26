@@ -1,100 +1,59 @@
 # mole.py
 
-import random
 from .base_character import Character
 
+
 class Mole(Character):
-    """When a racer stops on my space, or I stop on theirs, I warp to the
-    space in front of the lead racer. Tied leaders → random pick."""
+    """If there are no racers within 1 space of me, I move 6 for my main move.
+
+    Sharing my space (distance 0) and immediately adjacent (distance 1)
+    both count as "within 1" — so Mole only gets the bonus when alone in
+    a 3-space window. Otherwise Mole rolls a normal d6 like everyone else.
+
+    Implementation: main_roll override. Returns 6 directly (no die roll)
+    when the proximity check finds zero other active racers in the
+    [position-1, position+1] window. Doesn't go through game.roll_die
+    because the 6 isn't actually a die — same pattern as Legs's
+    always-5. Other phases (DIE_ROLL_TRIGGER, ROLL_MODIFICATION) still
+    operate on the returned 6 the same way they would on a normal roll.
+
+    Antimag interaction: Mole's "move 6" is a power, so a Mole strictly
+    ahead of an active AntimagicalAthlete loses it and falls back to
+    base.main_roll (vanilla d6). The Antimag main-move penalty then
+    applies on top in base.take_turn as usual.
+
+    Stunner interaction: Stunner-within-1 means there IS a racer within
+    1 of Mole, so Mole's power doesn't trigger — Mole rolls normally
+    via base.main_roll, which funnels through game.roll_die, which
+    forces a 1. Mole-isolated-from-Stunner means no one is within 1 of
+    Mole (including Stunner), so the move-6 bonus fires unblocked.
+    """
 
     POWER_PHASES = set()
     EDITION = "v2"
 
-    def move(self, game, play_by_play_lines, spaces):
-        pre = self.position
-        super().move(game, play_by_play_lines, spaces)
-        # Only fire if a new stop event happened (position actually changed).
-        # A clamped-to-zero move or a state-loop-blocked super call leaves
-        # position unchanged — no new "stop on theirs" event per spec.
-        if self.position != pre:
-            self._maybe_warp(game, play_by_play_lines)
-
-    def jump(self, game, position, play_by_play_lines):
-        pre = self.position
-        super().jump(game, position, play_by_play_lines)
-        if self.position != pre:
-            self._maybe_warp(game, play_by_play_lines)
-
-    def on_another_player_move(self, moved_player, game, play_by_play_lines):
-        # Only fire if the other player actually moved onto my space (not if
-        # they were already here and their move was a no-op).
-        if (moved_player.position != getattr(moved_player, 'previous_position', moved_player.position)
-                and moved_player.position == self.position):
-            self._maybe_warp(game, play_by_play_lines)
-
-    def on_another_player_jump(self, jumped_player, game, play_by_play_lines):
-        if (jumped_player.position != getattr(jumped_player, 'previous_position', jumped_player.position)
-                and jumped_player.position == self.position):
-            self._maybe_warp(game, play_by_play_lines)
-
-    # Max chained warps from a single outer trigger. Kept conservative to
-    # avoid memory blow-up on V1+V2 Wild races: each Mole warp emits log
-    # lines AND triggers on_another_player_jump on every player, which can
-    # fan out through reactive characters (Romantic, HugeBaby, Scoocher,
-    # etc.). Legitimate cascades almost always resolve in single digits.
-    _MAX_CASCADE_DEPTH = 10
-
-    def _maybe_warp(self, game, play_by_play_lines):
-        depth = getattr(self, '_warp_cascade_depth', 0)
-        if depth >= self._MAX_CASCADE_DEPTH:
-            # Backstop against runaway cascades (state-loop may miss subtle cycles).
-            # Emit a diagnostic so silent truncation is visible in the play-by-play.
-            play_by_play_lines.append(
-                f"{self.name} ({self.piece}) hit warp cascade cap "
-                f"({self._MAX_CASCADE_DEPTH}) — further warps this chain suppressed."
-            )
-            return
-        if self.finished or self in game.eliminated_players:
-            return
-        # AntimagicalAthlete: Mole's warp is a power; suppressed when ahead.
+    def main_roll(self, game, play_by_play_lines):
+        # Antimag: Mole's override is a power. Fall back to base d6 if suppressed.
         if game.is_power_suppressed_for(self):
-            return
+            return Character.main_roll(self, game, play_by_play_lines)
 
-        # Need at least one active racer sharing my space to fire.
-        space_mates = [
-            p for p in game.players
-            if p is not self
-            and p.position == self.position
-            and not p.finished
-            and p not in game.eliminated_players
-        ]
-        if not space_mates:
-            return
+        if self._has_neighbor_within_one(game):
+            # Someone's near me — no isolation bonus, roll normally.
+            return Character.main_roll(self, game, play_by_play_lines)
 
-        # Lead racer is the highest-positioned active racer (Mole included).
-        active = [
-            p for p in game.players
-            if not p.finished and p not in game.eliminated_players
-        ]
-        if not active:
-            return
-
-        max_pos = max(p.position for p in active)
-        target = max_pos + 1
-        if target > game.board.length:
-            return  # No space in front of the finish line
-        if target == self.position:
-            return  # Already there — avoid spinning in place
-
-        leaders = [p for p in active if p.position == max_pos]
-        leader = random.choice(leaders)
         play_by_play_lines.append(
-            f"{self.name} ({self.piece}) warps to space {target} "
-            f"(in front of lead racer {leader.name} ({leader.piece}))."
+            f"{self.name} ({self.piece}) is isolated (no racers within 1) — moves 6."
         )
-        self._warp_cascade_depth = depth + 1
-        try:
-            self.jump(game, target, play_by_play_lines)
-            self.register_ability_use(game, play_by_play_lines, description="Mole")
-        finally:
-            self._warp_cascade_depth = depth
+        self.last_roll = 6
+        self.register_ability_use(game, play_by_play_lines, description="Mole isolated")
+        return 6
+
+    def _has_neighbor_within_one(self, game):
+        for p in game.players:
+            if p is self:
+                continue
+            if p.finished or p in game.eliminated_players:
+                continue
+            if abs(p.position - self.position) <= 1:
+                return True
+        return False
