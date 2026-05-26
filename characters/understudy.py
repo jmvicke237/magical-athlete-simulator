@@ -23,9 +23,9 @@ class Understudy(Character):
         if self.finished or self in game.eliminated_players:
             return
 
-        my_roll = random.randint(1, 6)
+        my_roll = game.roll_die(self, play_by_play_lines)
         while my_roll == 6 and self._trigger_party_pooper(game, play_by_play_lines):
-            my_roll = random.randint(1, 6)
+            my_roll = game.roll_die(self, play_by_play_lines)
 
         if my_roll == roll:
             play_by_play_lines.append(

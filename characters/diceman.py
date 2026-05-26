@@ -12,7 +12,7 @@ class Diceman(Character):
     EDITION = "v2"
 
     def main_roll(self, game, play_by_play_lines):
-        rolls = [random.randint(1, 6) for _ in range(6)]
+        rolls = [game.roll_die(self, play_by_play_lines) for _ in range(6)]
         play_by_play_lines.append(
             f"{self.name} ({self.piece}) rolls 6 dice: {sorted(rolls, reverse=True)}"
         )
@@ -28,7 +28,7 @@ class Diceman(Character):
                 if not self._trigger_party_pooper(game, play_by_play_lines):
                     keep_going = False
                     break
-                rolls[idx] = random.randint(1, 6)
+                rolls[idx] = game.roll_die(self, play_by_play_lines)
                 play_by_play_lines.append(f"  die rerolled to {rolls[idx]}")
 
         counts = Counter(rolls)

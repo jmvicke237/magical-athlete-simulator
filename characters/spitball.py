@@ -25,13 +25,13 @@ class SpitBall(Character):
         if self.finished or self in game.eliminated_players:
             return
 
-        roll = random.randint(1, 6)
+        roll = game.roll_die(self, play_by_play_lines)
         play_by_play_lines.append(
             f"{self.name} ({self.piece}) rolls a spit-ball die: {roll}"
         )
         # PartyPooper's reroll rule applies — its hook moves PP and forces a reroll on a 6.
         while roll == 6 and self._trigger_party_pooper(game, play_by_play_lines):
-            roll = random.randint(1, 6)
+            roll = game.roll_die(self, play_by_play_lines)
             play_by_play_lines.append(
                 f"  spit-ball die rerolled to {roll}"
             )

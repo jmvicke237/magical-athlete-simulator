@@ -150,9 +150,11 @@ with tab_race:
                 value=1,
                 step=1,
                 help="Spaces subtracted from the main-move of any racer "
-                     "strictly ahead of an active AntimagicalAthlete. 0 = off "
-                     "(power suppression only). 1+ stacks the penalty on top "
-                     "of the existing 'no powers ahead of Antimag' rule.",
+                     "strictly ahead of an active AntimagicalAthlete. "
+                     "Default 1 is the canonical rule (racers ahead of "
+                     "Antimag lose their powers AND get -1 to their main "
+                     "move). Crank to 2+ for balance experiments; 0 disables "
+                     "the penalty entirely (suppression only).",
             )
 
             st.divider()

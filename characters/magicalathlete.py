@@ -1,17 +1,19 @@
 # magicalathlete.py
 
+import random
+
 from .base_character import Character
 from power_system import PowerPhase
 
 
 class MagicalAthlete(Character):
     """For my main move, I cast a spell instead of moving:
-      1: I trip.
-      2: Warp the last place racer to me and we move 2.
-      3: Racers in the lead move backwards 3.
-      4: Move 4 and trip any racers you pass.
-      5: Warp to the lead racer.
-      6: Move 6 and take another turn.
+      1: I get 1 point.
+      2: The last place racer warps to my space, then I move 2.
+      3: The lead racer moves backwards 3.
+      4: I move 4 and take an extra turn.
+      5: I warp to any other racer.
+      6: I move 6 and trip any racers I pass.
 
     Implementation: take_turn override bypasses the normal MOVEMENT phase
     and dispatches to a spell. PRE_ROLL still fires (Cheerleader / Hypnotist
@@ -30,7 +32,8 @@ class MagicalAthlete(Character):
         is suppressed too — thematically Inchworm cuts off the spell.
       - Spells that target other racers gracefully fizzle when no other
         racer is eligible (alone in the race, or every other racer is
-        finished/eliminated).
+        finished/eliminated). Spell 3 also fizzles if MA is the lead
+        (no racers ahead to push back).
     """
 
     POWER_PHASES = set()
@@ -66,12 +69,12 @@ class MagicalAthlete(Character):
                 f"{self.name} ({self.piece}) casts a spell — rolled {roll}!"
             )
             spell = {
-                1: self._spell_self_trip,
-                2: self._spell_warp_last_to_me,
-                3: self._spell_lead_back_three,
-                4: self._spell_move_four_trip_passed,
-                5: self._spell_warp_to_lead,
-                6: self._spell_move_six_extra_turn,
+                1: self._spell_gain_point,
+                2: self._spell_warp_last_then_move_2,
+                3: self._spell_lead_back_3,
+                4: self._spell_move_4_extra_turn,
+                5: self._spell_warp_to_any,
+                6: self._spell_move_6_trip_passed,
             }.get(roll)
             if spell is not None:
                 spell(game, play_by_play_lines)
@@ -96,14 +99,17 @@ class MagicalAthlete(Character):
     # Spells
     # ------------------------------------------------------------------
 
-    def _spell_self_trip(self, game, lines):
-        if self.tripped:
-            lines.append(f"  Spell 1: {self.name} ({self.piece}) is already tripped.")
-            return
-        self.trip(game, lines)
-        lines.append(f"  Spell 1: {self.name} ({self.piece}) trips themselves.")
+    def _spell_gain_point(self, game, lines):
+        """Spell 1: gain 1 bronze chip (1 point)."""
+        self.bronze_chips += 1
+        lines.append(
+            f"  Spell 1: {self.name} ({self.piece}) gains 1 bronze chip (1 point)."
+        )
 
-    def _spell_warp_last_to_me(self, game, lines):
+    def _spell_warp_last_then_move_2(self, game, lines):
+        """Spell 2: warp the last-place racer to MA's space, then MA moves 2.
+        The warped racer does NOT move 2 themselves — only MA moves after the
+        warp."""
         candidates = self._other_active_racers(game)
         if not candidates:
             lines.append("  Spell 2: no other racers — spell fizzles.")
@@ -111,14 +117,14 @@ class MagicalAthlete(Character):
         last = min(candidates, key=lambda p: p.position)
         lines.append(
             f"  Spell 2: warping last-place {last.name} ({last.piece}) "
-            f"to space {self.position}, then we both move 2."
+            f"to space {self.position}, then {self.name} ({self.piece}) moves 2."
         )
         last.jump(game, self.position, lines)
         self.move(game, lines, 2)
-        if not last.finished and last not in game.eliminated_players:
-            last.move(game, lines, 2)
 
-    def _spell_lead_back_three(self, game, lines):
+    def _spell_lead_back_3(self, game, lines):
+        """Spell 3: the (single) lead racer moves backwards 3. Ties broken
+        randomly. Fizzles if MA is the lead."""
         candidates = self._other_active_racers(game)
         if not candidates:
             lines.append("  Spell 3: no other racers — spell fizzles.")
@@ -130,17 +136,52 @@ class MagicalAthlete(Character):
             )
             return
         leaders = [p for p in candidates if p.position == max_pos]
-        names = ", ".join(f"{p.name} ({p.piece})" for p in leaders)
-        lines.append(f"  Spell 3: pushing the lead back 3 — {names}.")
-        for leader in leaders:
-            leader.move(game, lines, -3)
+        leader = random.choice(leaders)
+        lines.append(
+            f"  Spell 3: pushing lead racer {leader.name} ({leader.piece}) back 3."
+        )
+        leader.move(game, lines, -3)
 
-    def _spell_move_four_trip_passed(self, game, lines):
-        start = self.position
-        lines.append("  Spell 4: move 4 and trip any racers you pass.")
+    def _spell_move_4_extra_turn(self, game, lines):
+        """Spell 4: move 4 spaces, then queue an extra turn for MA. Bonus
+        turn fires through the normal Game.queued_turns mechanism."""
+        lines.append("  Spell 4: move 4 and take an extra turn.")
         self.move(game, lines, 4)
-        end = self.position
-        passed = self.detect_passes(game, start, end)
+        if self.finished or self in game.eliminated_players:
+            return
+        if not hasattr(game, "queued_turns"):
+            game.queued_turns = []
+        game.queued_turns.append(self)
+        lines.append(f"    {self.name} ({self.piece}) gets an extra turn!")
+
+    def _spell_warp_to_any(self, game, lines):
+        """Spell 5: warp to any other racer's space, picked randomly. No
+        bias — caster takes the dice however they fall."""
+        candidates = self._other_active_racers(game)
+        if not candidates:
+            lines.append("  Spell 5: no other racers — spell fizzles.")
+            return
+        target = random.choice(candidates)
+        lines.append(
+            f"  Spell 5: warping to {target.name} ({target.piece}) "
+            f"at space {target.position}."
+        )
+        self.jump(game, target.position, lines)
+
+    def _spell_move_6_trip_passed(self, game, lines):
+        """Spell 6: move 6 and trip any racers passed during the main-move
+        segment. Cap the trip range to the move's intended endpoint
+        (start + 6, clamped) so post-on_enter cascades (Sportals warps,
+        Wild move-spaces) don't extend the trip range past the original
+        main move — matches the same fix applied to Weremouth / Centaur /
+        base.move's pass detection."""
+        start = self.position
+        intended_end = max(0, min(start + 6, game.board.length))
+        lines.append("  Spell 6: move 6 and trip any racers passed.")
+        self.move(game, lines, 6)
+        if self.position == start:
+            return  # blocked (e.g., Stickler) — nothing passed
+        passed = self.detect_passes(game, start, intended_end)
         for racer in passed:
             if racer.finished or racer in game.eliminated_players:
                 continue
@@ -150,33 +191,6 @@ class MagicalAthlete(Character):
             lines.append(
                 f"    {racer.name} ({racer.piece}) is tripped (passed by spell)."
             )
-
-    def _spell_warp_to_lead(self, game, lines):
-        candidates = self._other_active_racers(game)
-        if not candidates:
-            lines.append("  Spell 5: no other racers — spell fizzles.")
-            return
-        leader = max(candidates, key=lambda p: p.position)
-        if leader.position <= self.position:
-            lines.append(
-                f"  Spell 5: nobody ahead of {self.name} — spell fizzles."
-            )
-            return
-        lines.append(
-            f"  Spell 5: warping to lead racer {leader.name} ({leader.piece}) "
-            f"at space {leader.position}."
-        )
-        self.jump(game, leader.position, lines)
-
-    def _spell_move_six_extra_turn(self, game, lines):
-        lines.append("  Spell 6: move 6 and take another turn.")
-        self.move(game, lines, 6)
-        if self.finished or self in game.eliminated_players:
-            return
-        if not hasattr(game, "queued_turns"):
-            game.queued_turns = []
-        game.queued_turns.append(self)
-        lines.append(f"    {self.name} ({self.piece}) gets an extra turn!")
 
     # ------------------------------------------------------------------
 

@@ -7,14 +7,14 @@ from power_system import PowerPhase
 from debug_utils import TurnEventCapExceeded
 
 class Game:
-    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=0, spoilsport_threshold=3, penguin_recovery_move=3, buddy_warp_range=3, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
+    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=3, penguin_recovery_move=3, buddy_warp_range=3, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
         self.players = []
         self.prometheus_threshold = prometheus_threshold  # Lead size that triggers Prometheus self-elimination (strict > comparison)
         self.prometheus_check_timing = prometheus_check_timing  # "start" or "end" — when the elimination check fires
         self._prometheus_starting_points = prometheus_starting_points  # Granted as bronze chips after player creation
         self.highroller_threshold = highroller_threshold  # HighRoller stops rolling once total >= this
         self._random_starting_bronze = random_starting_bronze  # Each racer gets random 0-5 starting bronze chips
-        self._antimag_main_move_penalty = max(0, int(antimag_main_move_penalty))  # Subtracted from the main-move spaces of any racer strictly ahead of an active AntimagicalAthlete; 0 disables.
+        self._antimag_main_move_penalty = max(0, int(antimag_main_move_penalty))  # Subtracted from the main-move spaces of any racer strictly ahead of an active AntimagicalAthlete. Canonical rule is 1 (the -1 is part of Antimag's power); 0 disables it entirely for testing.
         self.spoilsport_threshold = max(1, int(spoilsport_threshold))  # Minimum lead (in spaces) every other racer must have over Spoilsport before they cancel the race.
         self.penguin_recovery_move = max(0, int(penguin_recovery_move))  # Spaces a tripped Penguin auto-moves on a recovery turn; 0 = revert to normal trip skip-main-move behavior.
         self.buddy_warp_range = max(0, int(buddy_warp_range))  # Max distance (inclusive) between Buddy and their picked friend that lets the pre-move warp fire; 0 disables the warp.
@@ -237,9 +237,11 @@ class Game:
     def get_antimag_main_move_penalty(self, character):
         """Magnitude (>=0) to subtract from the given character's main-move
         spaces when they are strictly ahead of any active AntimagicalAthlete.
-        Returns 0 if the toggle is off, no Antimag is active, or the character
-        isn't ahead. Reuses is_power_suppressed_for for the position check so
-        the rule stays in lockstep with power suppression."""
+        Canonical penalty is 1 — part of Antimag's power along with power
+        suppression. Returns 0 if the penalty is disabled (toggle set to 0),
+        no Antimag is active, or the character isn't ahead. Reuses
+        is_power_suppressed_for for the position check so the penalty
+        stays in lockstep with power suppression."""
         if self._antimag_main_move_penalty <= 0:
             return 0
         if self.is_power_suppressed_for(character):
@@ -247,30 +249,17 @@ class Game:
         return 0
 
     def _take_turn_or_stun(self, player, play_by_play_lines):
-        """Take the player's turn, unless an active Stunner is within 1 space.
-        Stun completely skips the turn (NOT a trip — no abilities fire, no
-        Trip status is consumed). Wraps the turn in a watchdog: if more than
-        Game._turn_event_cap move/jump/ability events fire during this turn,
-        TurnEventCapExceeded is raised, the turn aborts, and a diagnostic
-        line is captured (so we can identify the bad character combo)."""
-        # Reset event counter BEFORE any logic in this function (including the
-        # stunner branch which calls register_ability_use). Otherwise a high
-        # leftover count from the previous aborted turn would re-trip the
-        # watchdog before we get to the try-block.
+        """Run the player's turn inside a watchdog so a runaway character
+        cascade can't grow unbounded. The Stunner proximity check used to
+        live here as a turn-skip gate; under the new Stunner rule it
+        moved to Game.roll_die (per-roll override) so adjacent racers
+        still take their turn but every die they roll comes up 1."""
+        # Reset event counter BEFORE any logic in this function. Otherwise
+        # a high leftover count from a previous aborted turn would
+        # re-trip the watchdog before we get to the try-block.
         self._turn_event_count = 0
 
-        # Wrap EVERYTHING in the try so any TurnEventCapExceeded is caught,
-        # including the stunner branch's register_ability_use.
         try:
-            stunner = self._find_active_stunner_near(player)
-            if stunner is not None:
-                play_by_play_lines.append(
-                    f"{player.name} ({player.piece}) is stunned by "
-                    f"{stunner.name} ({stunner.piece}) and skips their turn."
-                )
-                stunner.register_ability_use(self, play_by_play_lines, description="Stunner")
-                return
-
             player.take_turn(game=self, play_by_play_lines=play_by_play_lines)
         except TurnEventCapExceeded as exc:
             chars = [p.piece for p in self.players]
@@ -287,15 +276,40 @@ class Game:
             # Reset count so subsequent turns start fresh.
             self._turn_event_count = 0
 
-    def _find_active_stunner_near(self, player):
+    def is_near_stunner(self, player):
+        """True if any active (non-suppressed) Stunner is within 1 space of
+        the given player. Used by Game.roll_die to force a 1 for any roll
+        the player makes, per Stunner's spec: 'Other racers within 1 space
+        of me roll a 1 for all rolls.'"""
         for p in self.players:
             if (p.piece == "Stunner"
                     and p is not player
                     and not p.finished
                     and p not in self.eliminated_players
-                    and abs(p.position - player.position) <= 1):
-                return p
-        return None
+                    and abs(p.position - player.position) <= 1
+                    and not self.is_power_suppressed_for(p)):
+                return True
+        return False
+
+    def roll_die(self, player, play_by_play_lines=None, low=1, high=6):
+        """Roll a die for `player`. Returns 1 (regardless of `low`/`high`)
+        when Stunner's proximity rule applies — per Stunner's spec, that's
+        'roll a 1 for all rolls', interpreted literally even if a caller
+        passes an unusual range. Otherwise returns random.randint(low, high).
+
+        Use this instead of bare random.randint anywhere a CHARACTER ROLLS
+        a die that the game treats as a roll (main move, Duelist duel,
+        SpitBall, Understudy, Diceman, HighRoller). Internal randoms that
+        the spec doesn't call rolls — Genius's lucky number, Cheatah's
+        chosen value/guess, Mole's leader tiebreak, MagicalAthlete spell
+        target picks — stay on random.randint."""
+        if self.is_near_stunner(player):
+            if play_by_play_lines is not None:
+                play_by_play_lines.append(
+                    f"  Stunner forces {player.name} ({player.piece}) to roll 1."
+                )
+            return 1
+        return random.randint(low, high)
 
     def next_player(self):
         self.current_player_index = (self.current_player_index + 1) % len(self.turn_order)
@@ -566,7 +580,7 @@ def _run_single_simulation(character_names, board_type=DEFAULT_BOARD_TYPE, rando
     play_by_play_lines.insert(0, f"Board: {game.board.get_display_name()}")
     return turns, final_placements, play_by_play_lines, game.board.board_type
 
-def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=0, spoilsport_threshold=3, penguin_recovery_move=3, buddy_warp_range=3, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
+def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=3, penguin_recovery_move=3, buddy_warp_range=3, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
     """Run multiple simulations and return statistics with proper ability tracking.
 
     Args:

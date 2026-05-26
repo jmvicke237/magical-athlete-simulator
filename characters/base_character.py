@@ -157,10 +157,10 @@ class Character:
         pass
 
     def main_roll(self, game, play_by_play_lines):
-        roll = random.randint(1, 6)
+        roll = game.roll_die(self, play_by_play_lines)
         play_by_play_lines.append(f"{self.name} ({self.piece}) rolled a {roll}")
         while roll == 6 and self._trigger_party_pooper(game, play_by_play_lines):
-            roll = random.randint(1, 6)
+            roll = game.roll_die(self, play_by_play_lines)
             play_by_play_lines.append(f"  {self.name} ({self.piece}) rerolled and got a {roll}")
         self.last_roll = roll
         return roll
