@@ -205,6 +205,7 @@ class Game:
                 player.on_race_end(self, play_by_play_lines)
 
         play_by_play_lines.append("The race has ended!")
+        play_by_play_lines.append(f"Total Turns: {turns:02d}")
 
         play_by_play_lines.append("\nAbility Activation Summary:")
         for player in self.players:
