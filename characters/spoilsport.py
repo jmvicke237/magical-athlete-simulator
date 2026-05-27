@@ -5,9 +5,10 @@ from power_system import PowerPhase
 
 class Spoilsport(Character):
     """Before my main move: if every other (non-eliminated) racer is N+ spaces
-    ahead (default N=3, configurable via Game.spoilsport_threshold), the race
-    is cancelled. I get 4 bronze chips (4 points). Gold and silver chips already
-    awarded for 1st/2nd place are revoked — no one gets placement points."""
+    ahead (sim default N=5, printed card is 3; configurable via
+    Game.spoilsport_threshold), the race is cancelled. I get 4 bronze chips
+    (4 points). Gold and silver chips already awarded for 1st/2nd place are
+    revoked — no one gets placement points."""
 
     POWER_PHASES = {PowerPhase.PRE_ROLL}
     EDITION = "v2"
@@ -23,7 +24,7 @@ class Spoilsport(Character):
         if not contenders:
             return  # alone — nothing to cancel
 
-        threshold = getattr(game, "spoilsport_threshold", 3)
+        threshold = getattr(game, "spoilsport_threshold", 5)
         if not all((p.position - self.position) >= threshold for p in contenders):
             return
 

@@ -231,7 +231,7 @@ class MagicalAthleteApp:
         # Spoilsport cancel threshold: minimum lead (in spaces) every other
         # racer must have over Spoilsport before the race is cancelled.
         ttk.Label(left_frame, text="Spoilsport cancel-at:").grid(row=12, column=0, padx=5, pady=5, sticky="w")
-        self.spoilsport_threshold_var = tk.IntVar(value=3)
+        self.spoilsport_threshold_var = tk.IntVar(value=5)
         ttk.Spinbox(left_frame, from_=1, to=20, textvariable=self.spoilsport_threshold_var, width=5).grid(row=12, column=1, padx=5, pady=5, sticky="w")
 
         # Penguin recovery move: spaces a tripped Penguin auto-moves on

@@ -7,7 +7,7 @@ from power_system import PowerPhase
 from debug_utils import TurnEventCapExceeded
 
 class Game:
-    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=3, penguin_recovery_move=3, buddy_warp_range=3, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
+    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=5, penguin_recovery_move=3, buddy_warp_range=3, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
         self.players = []
         self.prometheus_threshold = prometheus_threshold  # Lead size that triggers Prometheus self-elimination (strict > comparison)
         self.prometheus_check_timing = prometheus_check_timing  # "start" or "end" — when the elimination check fires
@@ -277,20 +277,26 @@ class Game:
             # Reset count so subsequent turns start fresh.
             self._turn_event_count = 0
 
+    def _active_stunners_near(self, player):
+        """Return the list of active (non-suppressed) Stunners within 1 space
+        of `player`. Empty list if none. Used by roll_die for the override
+        and to credit each adjacent Stunner with an ability activation."""
+        return [
+            p for p in self.players
+            if p.piece == "Stunner"
+            and p is not player
+            and not p.finished
+            and p not in self.eliminated_players
+            and abs(p.position - player.position) <= 1
+            and not self.is_power_suppressed_for(p)
+        ]
+
     def is_near_stunner(self, player):
         """True if any active (non-suppressed) Stunner is within 1 space of
         the given player. Used by Game.roll_die to force a 1 for any roll
         the player makes, per Stunner's spec: 'Other racers within 1 space
         of me roll a 1 for all rolls.'"""
-        for p in self.players:
-            if (p.piece == "Stunner"
-                    and p is not player
-                    and not p.finished
-                    and p not in self.eliminated_players
-                    and abs(p.position - player.position) <= 1
-                    and not self.is_power_suppressed_for(p)):
-                return True
-        return False
+        return bool(self._active_stunners_near(player))
 
     def roll_die(self, player, play_by_play_lines=None, low=1, high=6):
         """Roll a die for `player`. Returns 1 (regardless of `low`/`high`)
@@ -303,12 +309,21 @@ class Game:
         SpitBall, Understudy, Diceman, HighRoller). Internal randoms that
         the spec doesn't call rolls — Genius's lucky number, Cheatah's
         chosen value/guess, Mole's leader tiebreak, MagicalAthlete spell
-        target picks — stay on random.randint."""
-        if self.is_near_stunner(player):
+        target picks — stay on random.randint.
+
+        Each override is an ability use: every adjacent Stunner is credited
+        via register_ability_use, which also triggers Scoocher (Scoocher's
+        rule is to react to any ability use, and a roll forced to 1 is an
+        ability use). This can fire many times per turn (Diceman's 6 dice,
+        HighRoller's chain) — that's intentional."""
+        nearby = self._active_stunners_near(player)
+        if nearby:
             if play_by_play_lines is not None:
                 play_by_play_lines.append(
                     f"  Stunner forces {player.name} ({player.piece}) to roll 1."
                 )
+            for s in nearby:
+                s.register_ability_use(self, play_by_play_lines)
             return 1
         return random.randint(low, high)
 
@@ -581,7 +596,7 @@ def _run_single_simulation(character_names, board_type=DEFAULT_BOARD_TYPE, rando
     play_by_play_lines.insert(0, f"Board: {game.board.get_display_name()}")
     return turns, final_placements, play_by_play_lines, game.board.board_type
 
-def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=3, penguin_recovery_move=3, buddy_warp_range=3, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
+def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", highroller_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=5, penguin_recovery_move=3, buddy_warp_range=3, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
     """Run multiple simulations and return statistics with proper ability tracking.
 
     Args:

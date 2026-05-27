@@ -138,7 +138,7 @@ with tab_race:
                 max_value=12,
                 value=8,
                 step=1,
-                help="HighRoller keeps re-rolling until they hit this total or higher.",
+                help="HighRoller keeps re-rolling until total ≥ this. Higher = greedier — more chances to bust on a same-or-lower roll (no movement that turn).",
             )
 
             st.divider()
@@ -163,13 +163,12 @@ with tab_race:
                 "Cancel-at",
                 min_value=1,
                 max_value=20,
-                value=3,
+                value=5,
                 step=1,
                 help="Minimum lead (in spaces) every other non-eliminated "
                      "racer must have over Spoilsport before they cancel the "
-                     "race. Default 3 matches the printed card; raise to make "
-                     "Spoilsport more patient, lower to make them quicker to "
-                     "rage-quit.",
+                     "race. Raise to make Spoilsport more patient, lower to "
+                     "make them quicker to rage-quit. Printed card is 3.",
             )
 
             st.divider()

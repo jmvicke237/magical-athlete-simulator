@@ -22,10 +22,12 @@ class Stunner(Character):
     is_near_stunner ignores suppressed Stunners — so racers adjacent to
     a suppressed Stunner roll normally.
 
-    Note: this is a passive proximity effect, not an "ability use" — it
-    doesn't increment Stunner's ability_activations counter and doesn't
-    trigger Scoocher per-override. Play-by-play prints a Stunner-forces
-    line on each override so the cause is visible.
+    Note: each override is an ability use — it credits the adjacent Stunner(s)
+    with an ability activation AND triggers Scoocher (Scoocher reacts to any
+    ability use, and a roll forced to 1 is an ability use). This can fire
+    many times per turn (Diceman's 6 dice, HighRoller's chain) — that's
+    intentional. Play-by-play prints a Stunner-forces line on each override
+    so the cause is visible.
     """
 
     POWER_PHASES = set()
