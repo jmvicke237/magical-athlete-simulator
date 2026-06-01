@@ -131,14 +131,14 @@ with tab_race:
                 )
 
             st.divider()
-            st.markdown("**HighRoller**")
-            highroller_threshold = st.number_input(
+            st.markdown("**ShowOff**")
+            showoff_threshold = st.number_input(
                 "Stop-at",
                 min_value=2,
                 max_value=12,
                 value=8,
                 step=1,
-                help="HighRoller keeps re-rolling until total ≥ this. Higher = greedier — more chances to bust on a same-or-lower roll (no movement that turn).",
+                help="ShowOff keeps re-rolling until total ≥ this. Higher = greedier — more chances to bust on a same-or-lower roll (no movement that turn).",
             )
 
             st.divider()
@@ -222,7 +222,7 @@ with tab_race:
                      "both pick from 4–6 only (1-in-3 hit rate; wrong-guess "
                      "move is 4–6 — guaranteed-bigger move when guessed "
                      "wrong, but easier to guess). Either way, this isn't "
-                     "a roll, so Inchworm/Skipper/Weremouth/Gunk etc. don't "
+                     "a roll, so Inchworm/Skipper/NormalHarry/Gunk etc. don't "
                      "fire on it.",
             )
 
@@ -303,7 +303,7 @@ with tab_race:
                 prometheus_threshold=int(prometheus_threshold),
                 prometheus_starting_points=int(prometheus_starting_points),
                 prometheus_check_timing=prometheus_check_timing,
-                highroller_threshold=int(highroller_threshold),
+                showoff_threshold=int(showoff_threshold),
                 random_starting_bronze=random_starting_bronze,
                 antimag_main_move_penalty=int(antimag_main_move_penalty),
                 spoilsport_threshold=int(spoilsport_threshold),

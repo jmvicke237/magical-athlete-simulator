@@ -1,9 +1,9 @@
-# weremouth.py
+# normalharry.py
 
 from .base_character import Character
 from power_system import PowerPhase
 
-class Weremouth(Character):
+class NormalHarry(Character):
     """When I roll a 1 or 2 for my main move, I transform into a W.E.R.E.M.O.U.T.H.
     for the rest of the race and eliminate any racers I pass. Transformation happens
     before the move, so eliminations apply on the transformation turn too."""
@@ -21,7 +21,7 @@ class Weremouth(Character):
             play_by_play_lines.append(
                 f"{self.name} ({self.piece}) rolled a {roll} and transforms into a W.E.R.E.M.O.U.T.H.!"
             )
-            self.register_ability_use(game, play_by_play_lines, description="Weremouth transformed")
+            self.register_ability_use(game, play_by_play_lines, description="NormalHarry transformed")
 
     def move(self, game, play_by_play_lines, spaces):
         if not self.is_transformed or spaces <= 0 or self.finished:
@@ -35,7 +35,7 @@ class Weremouth(Character):
         # to the partner space, Wild +N/-N spaces push further. We only
         # want to eat racers passed by THIS main-move segment; portal
         # warps shouldn't trigger pass-keyword eating per the warp rule,
-        # and Wild cascades fire their own Weremouth.move recursively
+        # and Wild cascades fire their own NormalHarry.move recursively
         # (which handle their own eating range).
         intended_end = max(0, min(start_pos + spaces, game.board.length))
 
@@ -54,8 +54,8 @@ class Weremouth(Character):
             return  # blocked (Stickler) or no-op
 
         for player, original_pos in candidates:
-            # AntimagicalAthlete: if Weremouth's pass put us ahead of Antimag,
-            # Weremouth's powers are suppressed mid-pass, so no eliminations.
+            # AntimagicalAthlete: if NormalHarry's pass put us ahead of Antimag,
+            # NormalHarry's powers are suppressed mid-pass, so no eliminations.
             if game.is_power_suppressed_for(self):
                 break
             if (start_pos < original_pos < intended_end
@@ -64,5 +64,5 @@ class Weremouth(Character):
                 game.eliminate_player(player, play_by_play_lines)
                 self.register_ability_use(
                     game, play_by_play_lines,
-                    description=f"Weremouth ate {player.piece}"
+                    description=f"NormalHarry ate {player.piece}"
                 )

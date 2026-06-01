@@ -6,9 +6,9 @@ class AntimagicalAthlete(Character):
     """Racers ahead of me have no powers AND -1 to their main move.
 
     Suppression is dynamic — checked fresh at each power-firing call site,
-    so it kicks in immediately as another racer passes me (e.g. Weremouth's
+    so it kicks in immediately as another racer passes me (e.g. NormalHarry's
     mid-pass elimination doesn't fire because by the time it would,
-    Weremouth is ahead and powerless).
+    NormalHarry is ahead and powerless).
 
     Implementation: Game.is_power_suppressed_for(character) is consulted at
     every "power" dispatch site:
@@ -16,7 +16,7 @@ class AntimagicalAthlete(Character):
       - base.move's on_being_passed, move_with_another, on_another_player_move
       - base.jump's on_another_player_jump
       - base.take_turn's reroll_main_roll and post_move_ability
-      - Weremouth's mid-pass elimination loop
+      - NormalHarry's mid-pass elimination loop
       - Mole's _maybe_warp
 
     Main-move penalty: Game.get_antimag_main_move_penalty subtracts N spaces

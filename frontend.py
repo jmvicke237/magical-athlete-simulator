@@ -213,10 +213,10 @@ class MagicalAthleteApp:
         ttk.Radiobutton(check_timing_frame, text="Start of turn", variable=self.prometheus_check_timing_var, value="start").pack(anchor="w")
         ttk.Radiobutton(check_timing_frame, text="End of turn", variable=self.prometheus_check_timing_var, value="end").pack(anchor="w")
 
-        # HighRoller riskiness — total threshold to stop rolling. Higher = riskier.
-        ttk.Label(left_frame, text="HighRoller stop-at:").grid(row=9, column=0, padx=5, pady=5, sticky="w")
-        self.highroller_threshold_var = tk.IntVar(value=8)
-        ttk.Spinbox(left_frame, from_=1, to=30, textvariable=self.highroller_threshold_var, width=5).grid(row=9, column=1, padx=5, pady=5, sticky="w")
+        # ShowOff riskiness — total threshold to stop rolling. Higher = riskier.
+        ttk.Label(left_frame, text="ShowOff stop-at:").grid(row=9, column=0, padx=5, pady=5, sticky="w")
+        self.showoff_threshold_var = tk.IntVar(value=8)
+        ttk.Spinbox(left_frame, from_=1, to=30, textvariable=self.showoff_threshold_var, width=5).grid(row=9, column=1, padx=5, pady=5, sticky="w")
 
         # Random starting bronze chips per racer (0-5)
         self.random_starting_bronze_var = tk.BooleanVar(value=True)
@@ -592,7 +592,7 @@ class MagicalAthleteApp:
         prometheus_threshold = self.prometheus_threshold_var.get()
         prometheus_starting_points = self.prometheus_starting_points_var.get()
         prometheus_check_timing = self.prometheus_check_timing_var.get()
-        highroller_threshold = self.highroller_threshold_var.get()
+        showoff_threshold = self.showoff_threshold_var.get()
         random_starting_bronze = self.random_starting_bronze_var.get()
         antimag_main_move_penalty = self.antimag_main_move_penalty_var.get()
         spoilsport_threshold = self.spoilsport_threshold_var.get()
@@ -628,7 +628,7 @@ class MagicalAthleteApp:
                 # Updated to handle the additional returns including chip statistics and board type counts
                 # collect_detailed_logs=True because frontend has an export logs feature
                 average_turns, average_finish_positions, all_play_by_play, ability_activations, appearance_count, chip_stats, board_type_counts, win_counts, turns_by_board = run_simulations(
-                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, highroller_threshold=highroller_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, penguin_recovery_move=penguin_recovery_move, buddy_warp_range=buddy_warp_range, penguin_alt_mode=penguin_alt_mode, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode
+                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, penguin_recovery_move=penguin_recovery_move, buddy_warp_range=buddy_warp_range, penguin_alt_mode=penguin_alt_mode, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode
                 )
 
                 # Display results with ability data included

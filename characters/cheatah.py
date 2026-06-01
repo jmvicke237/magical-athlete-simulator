@@ -9,7 +9,7 @@ class Cheatah(Character):
     The player to my right guesses; either way I move the chosen value, but on
     a correct guess I'm also tripped on my next turn (caught cheating).
     Doesn't count as a roll, so power triggers (Inchworm, StinkEye, Skipper,
-    Weremouth, SilverSpoon) don't fire and roll modifications (Coach, Gunk,
+    NormalHarry, SilverSpoon) don't fire and roll modifications (Coach, Gunk,
     Blimp) don't apply.
 
     Variant (Game.cheatah_alt_mode == True): same rules as default,

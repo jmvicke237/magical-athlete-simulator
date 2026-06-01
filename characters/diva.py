@@ -1,10 +1,10 @@
-# caboose.py
+# diva.py
 
 import random
 from .base_character import Character
 from power_system import PowerPhase
 
-class Caboose(Character):
+class Diva(Character):
     """Before my main move: if I'm in last, swap with the lead racer.
     If I'm in the lead, swap with the last-place racer. Random tie-break at either end."""
 
@@ -38,4 +38,4 @@ class Caboose(Character):
             f"{self.name} ({self.piece}) swaps with {role} racer {target.name} ({target.piece})."
         )
         self.swap_positions(target, game, play_by_play_lines)
-        self.register_ability_use(game, play_by_play_lines, description="Caboose")
+        self.register_ability_use(game, play_by_play_lines, description="Diva")

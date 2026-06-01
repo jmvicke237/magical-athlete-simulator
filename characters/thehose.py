@@ -1,9 +1,9 @@
-# spitball.py
+# thehose.py
 
 import random
 from .base_character import Character
 
-class SpitBall(Character):
+class TheHose(Character):
     """At the end of my turn, I roll a die. Every non-finished racer within
     that many spaces strictly in front of me gets tripped (skips their next
     main move). PartyPooper's reroll-the-6 rule applies to the spit-ball roll.
@@ -55,4 +55,4 @@ class SpitBall(Character):
             play_by_play_lines.append(
                 f"  Tripped {target.name} ({target.piece}) at position {target.position}."
             )
-        self.register_ability_use(game, play_by_play_lines, description="SpitBall")
+        self.register_ability_use(game, play_by_play_lines, description="TheHose")

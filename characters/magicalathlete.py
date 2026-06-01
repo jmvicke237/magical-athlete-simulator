@@ -27,7 +27,7 @@ class MagicalAthlete(Character):
     Stunner synergy note: when MA is within 1 of an active Stunner,
     game.roll_die forces every roll to 1, so MA casts spell 1 every
     turn and moves 10 each turn. Faster than a vanilla d6 (3.5 avg)
-    by a wide margin — analogous to HighRoller's auto-finish synergy.
+    by a wide margin — analogous to ShowOff's auto-finish synergy.
 
     Implementation: take_turn override bypasses the normal MOVEMENT phase
     and dispatches to a spell. PRE_ROLL still fires (Cheerleader / Hypnotist
@@ -205,7 +205,7 @@ class MagicalAthlete(Character):
         endpoint (start + 6, clamped) so on_enter cascades inside
         super().move (Sportals warps, Wild move-spaces) don't extend
         the trip range past the original main-move — matches the
-        same fix applied to Weremouth / Centaur / base.move's pass
+        same fix applied to NormalHarry / Centaur / base.move's pass
         detection."""
         start = self.position
         intended_end = max(0, min(start + 6, game.board.length))

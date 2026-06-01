@@ -1,14 +1,14 @@
-# understudy.py
+# soulmate.py
 
 import random
 from .base_character import Character
 from power_system import PowerPhase
 
-class Understudy(Character):
+class Soulmate(Character):
     """When other racers roll for their main move, I roll too. If we match,
     I move that amount.
 
-    The understudy roll is a separate d6 — it doesn't go through main_roll, so
+    The soulmate roll is a separate d6 — it doesn't go through main_roll, so
     it doesn't fire other characters' DIE_ROLL_TRIGGERs (Inchworm on a 1,
     StinkEye on a 3). PartyPooper's "any d6 of 6 forces a reroll" still applies
     via the shared _trigger_party_pooper helper.
@@ -29,13 +29,13 @@ class Understudy(Character):
 
         if my_roll == roll:
             play_by_play_lines.append(
-                f"{self.name} ({self.piece}) understudy-rolls a {my_roll}, "
+                f"{self.name} ({self.piece}) soulmate-rolls a {my_roll}, "
                 f"matching {roller.name} ({roller.piece}) — moves {my_roll}!"
             )
             self.move(game, play_by_play_lines, my_roll)
-            self.register_ability_use(game, play_by_play_lines, description="Understudy")
+            self.register_ability_use(game, play_by_play_lines, description="Soulmate")
         else:
             play_by_play_lines.append(
-                f"{self.name} ({self.piece}) understudy-rolls a {my_roll} "
+                f"{self.name} ({self.piece}) soulmate-rolls a {my_roll} "
                 f"(no match with {roller.name}'s {roll})"
             )

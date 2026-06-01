@@ -41,10 +41,10 @@ from characters.stickler import Stickler
 # V2 characters
 from characters.dummy2 import Dummy2
 from characters.overtaker import Overtaker
-from characters.kingslayer import Kingslayer
-from characters.caboose import Caboose
+from characters.kingtripper import Kingtripper
+from characters.diva import Diva
 from characters.diceman import Diceman
-from characters.weremouth import Weremouth
+from characters.normalharry import NormalHarry
 from characters.stinkeye import StinkEye
 from characters.silverspoon import SilverSpoon
 from characters.spoilsport import Spoilsport
@@ -53,19 +53,19 @@ from characters.hogknight import HogKnight
 from characters.prometheus import Prometheus
 from characters.partypooper import PartyPooper
 from characters.blunderdog import Blunderdog
-from characters.spitball import SpitBall
+from characters.thehose import TheHose
 from characters.mole import Mole
 from characters.stunner import Stunner
 from characters.stepdad import Stepdad
 from characters.antimagicalathlete import AntimagicalAthlete
 from characters.hopfrog import Hopfrog
 from characters.sandbag import Sandbag
-from characters.understudy import Understudy
-from characters.zipper import Zipper
+from characters.soulmate import Soulmate
+from characters.tail import Tail
 from characters.apprentice import Apprentice
 from characters.blackhole import BlackHole
 from characters.buttinsky import Buttinsky
-from characters.highroller import HighRoller
+from characters.showoff import ShowOff
 from characters.showboat import ShowBoat
 from characters.hotel import Hotel
 from characters.penguin import Penguin
@@ -109,10 +109,10 @@ character_abilities = {
     "Stickler": Stickler,
     "Dummy2": Dummy2,
     "Overtaker": Overtaker,
-    "Kingslayer": Kingslayer,
-    "Caboose": Caboose,
+    "Kingtripper": Kingtripper,
+    "Diva": Diva,
     "Diceman": Diceman,
-    "Weremouth": Weremouth,
+    "NormalHarry": NormalHarry,
     "StinkEye": StinkEye,
     "SilverSpoon": SilverSpoon,
     "Spoilsport": Spoilsport,
@@ -121,19 +121,19 @@ character_abilities = {
     "Prometheus": Prometheus,
     "PartyPooper": PartyPooper,
     "Blunderdog": Blunderdog,
-    "SpitBall": SpitBall,
+    "TheHose": TheHose,
     "Mole": Mole,
     "Stunner": Stunner,
     "Stepdad": Stepdad,
     "AntimagicalAthlete": AntimagicalAthlete,
     "Hopfrog": Hopfrog,
     "Sandbag": Sandbag,
-    "Understudy": Understudy,
-    "Zipper": Zipper,
+    "Soulmate": Soulmate,
+    "Tail": Tail,
     "Apprentice": Apprentice,
     "BlackHole": BlackHole,
     "Buttinsky": Buttinsky,
-    "HighRoller": HighRoller,
+    "ShowOff": ShowOff,
     "ShowBoat": ShowBoat,
     "Hotel": Hotel,
     "Penguin": Penguin,

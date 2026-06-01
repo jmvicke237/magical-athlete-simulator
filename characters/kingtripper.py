@@ -1,10 +1,10 @@
-# kingslayer.py
+# kingtripper.py
 
 import random
 from .base_character import Character
 from power_system import PowerPhase
 
-class Kingslayer(Character):
+class Kingtripper(Character):
     """Before my main move, I trip the racer in the lead. If tied, choose randomly.
     Never targets self."""
 
@@ -20,7 +20,7 @@ class Kingslayer(Character):
             return
 
         max_pos = max(p.position for p in active)
-        # Only target non-self leaders — if Kingslayer is alone in the lead, do nothing
+        # Only target non-self leaders — if Kingtripper is alone in the lead, do nothing
         leaders = [p for p in active if p.position == max_pos and p is not self]
         if not leaders:
             return
@@ -30,4 +30,4 @@ class Kingslayer(Character):
         play_by_play_lines.append(
             f"{self.name} ({self.piece}) tripped lead racer {target.name} ({target.piece}) at position {target.position}."
         )
-        self.register_ability_use(game, play_by_play_lines, description="Kingslayer")
+        self.register_ability_use(game, play_by_play_lines, description="Kingtripper")

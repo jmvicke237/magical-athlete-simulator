@@ -1,11 +1,11 @@
-# zipper.py
+# tail.py
 
 from .base_character import Character
 from power_system import PowerPhase
 
-class Zipper(Character):
+class Tail(Character):
     """Before my main move, I warp to the space behind the closest active
-    racer ahead of me. Finished and eliminated racers are excluded — Zipper
+    racer ahead of me. Finished and eliminated racers are excluded — Tail
     only chases racers still in the race. If no active racer is ahead — no warp."""
 
     POWER_PHASES = {PowerPhase.PRE_ROLL}
@@ -35,4 +35,4 @@ class Zipper(Character):
             f"(behind {closest.name} ({closest.piece}) at {closest.position})."
         )
         self.jump(game, target, play_by_play_lines)
-        self.register_ability_use(game, play_by_play_lines, description="Zipper")
+        self.register_ability_use(game, play_by_play_lines, description="Tail")
