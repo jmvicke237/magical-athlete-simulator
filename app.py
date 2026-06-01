@@ -105,29 +105,37 @@ with tab_race:
             col_prom1, col_prom2, col_prom3 = st.columns(3)
             with col_prom1:
                 speeddemon_threshold = st.number_input(
-                    "Threshold",
+                    "Lead threshold",
                     min_value=0,
                     max_value=20,
-                    value=2,
+                    value=4,
                     step=1,
-                    help="If SpeedDemon is in the race, racers below this point "
-                         "total trigger SpeedDemon's bronze handout.",
+                    help="Lead size (in spaces over the next racer) at which "
+                         "SpeedDemon is eliminated. Spec: 4. Raise to let "
+                         "SpeedDemon survive bigger leads before being struck "
+                         "down; 0 disables the safety entirely.",
                 )
             with col_prom2:
                 speeddemon_starting_points = st.number_input(
                     "Starting points",
                     min_value=0,
                     max_value=20,
-                    value=1,
+                    value=3,
                     step=1,
-                    help="Bronze chips SpeedDemon starts with.",
+                    help="Bronze chips SpeedDemon starts the race with. "
+                         "Default 3 simulates a later race in a real cup, "
+                         "where SpeedDemon would already have points and the "
+                         "+1/point bonus is meaningful. Set to 0 for an "
+                         "isolated first-race comparison.",
                 )
             with col_prom3:
                 speeddemon_check_timing = st.selectbox(
                     "Check timing",
-                    ["end", "start"],
-                    index=1,
-                    help="When in the turn cycle SpeedDemon checks point totals.",
+                    ["start", "end"],
+                    index=0,
+                    help="When the lead-too-big elimination check fires. Spec: "
+                         "start (matches 'at the start of my turn'). 'end' = "
+                         "check after the move instead — useful for A/B testing.",
                 )
 
             st.divider()
@@ -180,17 +188,16 @@ with tab_race:
                 value=5,
                 step=1,
                 help="Max distance (in spaces) between Nemesis and their picked "
-                     "friend that allows the pre-Main-Move warp to fire. "
-                     "Default 3 matches the printed card. 0 = warp disabled "
-                     "(Nemesis still picks a friend at race start, just never "
-                     "warps).",
+                     "target that allows the pre-Main-Move warp to fire. "
+                     "Spec: 5. 0 = warp disabled (Nemesis still picks a target "
+                     "at race start, just never warps).",
             )
 
             st.divider()
             st.markdown("**Cheatah**")
             cheatah_alt_mode = st.checkbox(
                 "Alt mode (4–6 only)",
-                value=False,
+                value=True,
                 help="OFF (default): Cheatah and the guesser both pick from "
                      "1–6 (1-in-6 hit rate; wrong-guess move is 1–6). ON: "
                      "both pick from 4–6 only (1-in-3 hit rate; wrong-guess "
@@ -206,7 +213,10 @@ with tab_race:
                 "Random starting bronze (0–4 each racer)",
                 value=True,
                 help="Each racer starts with 0–4 bronze chips (excluded from "
-                     "the per-race points-earned average).",
+                     "the per-race points-earned average). Default ON simulates "
+                     "a later race in a real cup, where racers already have "
+                     "varying chip totals from prior races. Turn OFF for an "
+                     "isolated first-race comparison.",
             )
 
     # ---- Run button -------------------------------------------------------

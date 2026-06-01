@@ -33,7 +33,7 @@ class Cheatah(Character):
         # Pick range: default 1-6; alt mode restricts both Cheatah's
         # chosen value and the guesser's guess to 4-6 (shorter wrong-guess
         # tail, smaller guess space → higher hit rate).
-        alt_mode = getattr(game, "cheatah_alt_mode", False)
+        alt_mode = getattr(game, "cheatah_alt_mode", True)
         low, high = (4, 6) if alt_mode else (1, 6)
 
         chosen = random.randint(low, high)

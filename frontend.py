@@ -199,11 +199,11 @@ class MagicalAthleteApp:
 
         # SpeedDemon tweaks (only matter if SpeedDemon is in the race)
         ttk.Label(left_frame, text="SpeedDemon elim threshold:").grid(row=6, column=0, padx=5, pady=5, sticky="w")
-        self.speeddemon_threshold_var = tk.IntVar(value=2)
+        self.speeddemon_threshold_var = tk.IntVar(value=4)
         ttk.Spinbox(left_frame, from_=0, to=30, textvariable=self.speeddemon_threshold_var, width=5).grid(row=6, column=1, padx=5, pady=5, sticky="w")
 
         ttk.Label(left_frame, text="SpeedDemon starting points:").grid(row=7, column=0, padx=5, pady=5, sticky="w")
-        self.speeddemon_starting_points_var = tk.IntVar(value=1)
+        self.speeddemon_starting_points_var = tk.IntVar(value=3)
         ttk.Spinbox(left_frame, from_=0, to=30, textvariable=self.speeddemon_starting_points_var, width=5).grid(row=7, column=1, padx=5, pady=5, sticky="w")
 
         ttk.Label(left_frame, text="SpeedDemon check at:").grid(row=8, column=0, padx=5, pady=5, sticky="nw")
@@ -242,7 +242,7 @@ class MagicalAthleteApp:
 
         # Cheatah alt mode: wrong guesses move double the chosen value
         # instead of just the chosen value.
-        self.cheatah_alt_mode_var = tk.BooleanVar(value=False)
+        self.cheatah_alt_mode_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(left_frame, text="Cheatah alt mode (4-6 only — both choose & guess in 4-6)", variable=self.cheatah_alt_mode_var).grid(row=14, column=0, columnspan=2, padx=5, pady=5, sticky="w")
 
         # Run button

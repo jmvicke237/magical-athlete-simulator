@@ -7,7 +7,7 @@ from power_system import PowerPhase
 from debug_utils import TurnEventCapExceeded
 
 class Game:
-    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, speeddemon_threshold=4, speeddemon_starting_points=0, speeddemon_check_timing="end", showoff_threshold=5, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=5, nemesis_warp_range=5, random_board_pool=None, cheatah_alt_mode=False):
+    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, speeddemon_threshold=4, speeddemon_starting_points=3, speeddemon_check_timing="start", showoff_threshold=5, random_starting_bronze=True, antimag_main_move_penalty=1, spoilsport_threshold=5, nemesis_warp_range=5, random_board_pool=None, cheatah_alt_mode=True):
         self.players = []
         self.speeddemon_threshold = speeddemon_threshold  # Lead size that triggers SpeedDemon self-elimination (strict > comparison)
         self.speeddemon_check_timing = speeddemon_check_timing  # "start" or "end" — when the elimination check fires
@@ -17,7 +17,7 @@ class Game:
         self._antimag_main_move_penalty = max(0, int(antimag_main_move_penalty))  # Subtracted from the main-move spaces of any racer strictly ahead of an active AntimagicalAthlete. Canonical rule is 1 (the -1 is part of Antimag's power); 0 disables it entirely for testing.
         self.spoilsport_threshold = max(1, int(spoilsport_threshold))  # Minimum lead (in spaces) every other racer must have over Spoilsport before they cancel the race.
         self.nemesis_warp_range = max(0, int(nemesis_warp_range))  # Max distance (inclusive) between Nemesis and their picked target that lets the pre-move warp fire; 0 disables the warp.
-        self.cheatah_alt_mode = bool(cheatah_alt_mode)  # When True, Cheatah moves double the chosen value on a wrong guess (default: moves the chosen value).
+        self.cheatah_alt_mode = bool(cheatah_alt_mode)  # When True (default), both Cheatah and the guesser pick from 4-6 only (1-in-3 hit rate, higher movement floor). When False, both pick from 1-6 (1-in-6 hit rate, full range).
         
         # Handle board creation
         if board:
@@ -195,6 +195,26 @@ class Game:
                 if self.should_game_end(play_by_play_lines):
                     break
                 self.next_player()
+
+        # Auto-finish the last surviving racer when the race ended due to
+        # elimination (everyone else eaten by NormalHarry/MOUTH/Kraken etc.).
+        # In a real game they'd just roll until they reach the finish, so
+        # they get whichever placement slot is still open: gold if no one
+        # finished, silver if one racer had already finished. Skipped on
+        # Spoilsport cancellation (race_cancelled) and MAX_TURNS timeout —
+        # those endings aren't "I won the remaining slot," they're a wash.
+        if not getattr(self, 'race_cancelled', False) and turns < MAX_TURNS:
+            survivors = [
+                p for p in self.players
+                if not p.finished and p not in self.eliminated_players
+            ]
+            if len(survivors) == 1:
+                survivor = survivors[0]
+                play_by_play_lines.append(
+                    f"{survivor.name} ({survivor.piece}) is the last racer "
+                    f"standing — auto-finishes the race."
+                )
+                self.finish_player(survivor, play_by_play_lines)
 
         # End-of-race hooks (e.g., Gloth's no-corner bonus). Antimag
         # suppression applies — racers ahead of Antimag don't get end-of-race powers.
@@ -594,7 +614,7 @@ def _run_single_simulation(character_names, board_type=DEFAULT_BOARD_TYPE, rando
     play_by_play_lines.insert(0, f"Board: {game.board.get_display_name()}")
     return turns, final_placements, play_by_play_lines, game.board.board_type
 
-def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, speeddemon_threshold=4, speeddemon_starting_points=0, speeddemon_check_timing="end", showoff_threshold=5, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=5, nemesis_warp_range=5, random_board_pool=None, cheatah_alt_mode=False):
+def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, speeddemon_threshold=4, speeddemon_starting_points=3, speeddemon_check_timing="start", showoff_threshold=5, random_starting_bronze=True, antimag_main_move_penalty=1, spoilsport_threshold=5, nemesis_warp_range=5, random_board_pool=None, cheatah_alt_mode=True):
     """Run multiple simulations and return statistics with proper ability tracking.
 
     Args:

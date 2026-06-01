@@ -14,7 +14,7 @@ class SpeedDemon(Character):
     EDITION = "v2"
 
     def pre_move_action(self, game, play_by_play_lines):
-        if getattr(game, 'speeddemon_check_timing', 'end') != 'start':
+        if getattr(game, 'speeddemon_check_timing', 'start') != 'start':
             return
         # Fires even when tripped — SpeedDemon can be struck down regardless
         # of whether they would otherwise move this turn.
@@ -23,7 +23,7 @@ class SpeedDemon(Character):
     def post_turn_actions(self, game, current_player, play_by_play_lines):
         if current_player is not self:
             return
-        if getattr(game, 'speeddemon_check_timing', 'end') != 'end':
+        if getattr(game, 'speeddemon_check_timing', 'start') != 'end':
             return
         self._maybe_self_eliminate(game, play_by_play_lines)
 
