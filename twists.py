@@ -140,6 +140,23 @@ def apply_mirror_world(game, _triggerer, lines):
             f"    {p.name} ({p.piece}): {old} -> {p.position}"
         )
 
+    # Edge case: any racer who was on the Start space (position 0) at the
+    # time of the flip now lands exactly on the finish line (position N
+    # mirrors to board.length - N = board.length). They auto-finish. We
+    # resolve them in turn_order so 1st place (gold) goes to whoever comes
+    # first in the turn order, then silver, then any remaining are just
+    # "finished" with no chip. finish_player handles the chip awarding.
+    for player_idx in game.turn_order:
+        p = game.players[player_idx]
+        if p.finished or p in game.eliminated_players:
+            continue
+        if p.position >= game.board.length:
+            lines.append(
+                f"    {p.name} ({p.piece}) was on the Start when mirrored — "
+                f"now on the finish line, auto-finishes."
+            )
+            game.finish_player(p, lines)
+
 
 # ---------------------------------------------------------------------------
 # Persistent twists — set state on game.twist_state for ongoing hooks
