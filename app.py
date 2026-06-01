@@ -67,8 +67,8 @@ with tab_race:
         use_sportals = st.checkbox(
             "Sportals",
             value=True,
-            help="Wormhole board: 7 paired portals (4-7, 8-12, 11-15, "
-                 "16-18, 17-22, 20-23, 24-28). Stopping on a portal warps "
+            help="Wormhole board: 6 paired portals (4-6, 8-12, 11-15, "
+                 "16-22, 20-23, 24-28). Stopping on a portal warps "
                  "you to its partner. Per warp rules, this doesn't trigger "
                  "stopping/passing abilities — but share-space effects "
                  "(Duelist) still fire at the destination.",

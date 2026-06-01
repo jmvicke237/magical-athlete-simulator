@@ -4,11 +4,10 @@ class Board:
     # Sportals portal pairs. Each space appears in exactly one pair so portal
     # ping-pong only needs a one-step recursion guard (the _via_portal flag).
     SPORTALS_PORTAL_PAIRS = [
-        (4, 7),
+        (4, 6),
         (8, 12),
         (11, 15),
-        (16, 18),
-        (17, 22),
+        (16, 22),
         (20, 23),
         (24, 28),
     ]
