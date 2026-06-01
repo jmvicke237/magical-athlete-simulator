@@ -88,11 +88,6 @@ class Character:
             context = game.resolve_phase(PowerPhase.DIE_ROLL_TRIGGER, self, play_by_play_lines,
                                         context={'roll': roll})
 
-            # Record this roll for Apprentice's match check on the NEXT racer.
-            # Done after DIE_ROLL_TRIGGER so Apprentice's own check (in their
-            # trigger_on_main_move_roll) compares to the *previous* racer's roll.
-            game._last_main_roll = self.last_roll
-
             # Check if Inchworm or similar set skip_main_move
             if not self.skip_main_move:
                 # PHASE 3: ROLL_MODIFICATION - Modify the roll value

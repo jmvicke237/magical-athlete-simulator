@@ -7,7 +7,7 @@ from power_system import PowerPhase
 from debug_utils import TurnEventCapExceeded
 
 class Game:
-    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, speeddemon_threshold=4, speeddemon_starting_points=3, speeddemon_check_timing="start", showoff_threshold=5, random_starting_bronze=True, antimag_main_move_penalty=1, spoilsport_threshold=5, nemesis_warp_range=5, random_board_pool=None, cheatah_alt_mode=True):
+    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, speeddemon_threshold=4, speeddemon_starting_points=3, speeddemon_check_timing="start", showoff_threshold=5, random_starting_bronze=True, antimag_main_move_penalty=1, spoilsport_threshold=5, nemesis_warp_range=5, random_board_pool=None, cheatah_alt_mode=True, forced_twist=None):
         self.players = []
         self.speeddemon_threshold = speeddemon_threshold  # Lead size that triggers SpeedDemon self-elimination (strict > comparison)
         self.speeddemon_check_timing = speeddemon_check_timing  # "start" or "end" — when the elimination check fires
@@ -38,7 +38,6 @@ class Game:
         self.turn_order = []
         self.current_player_index = 0
         self.race_cancelled = False  # Set by Spoilsport (or similar) to end the race
-        self._last_main_roll = None  # Most recent main-roll value across all players (used by Apprentice)
         # Watchdog: counts move/jump/ability events per turn. Reset in _take_turn_or_stun.
         # Exceeding the cap raises TurnEventCapExceeded to abort the runaway cascade.
         self._turn_event_count = 0
@@ -68,6 +67,10 @@ class Game:
         self.twist_triggered = False
         self.twists_drawn = []
         self.twist_state = {}
+        # Forced twist: None or "All" → draw randomly from the pool;
+        # otherwise pin to the named twist (must match an entry in
+        # twists.APPLY_FUNCS, else falls back to random with a warning).
+        self.forced_twist = forced_twist if forced_twist and forced_twist != "All" else None
         
         self._create_players(character_names, random_turn_order)
 
@@ -387,8 +390,12 @@ class Game:
             f"\n>>> {triggerer.name} ({triggerer.piece}) passed space 13 — "
             f"a twist is drawn!"
         )
-        from twists import draw_and_apply_twist
-        draw_and_apply_twist(self, triggerer, play_by_play_lines)
+        if self.forced_twist:
+            from twists import apply_named_twist
+            apply_named_twist(self, triggerer, play_by_play_lines, self.forced_twist)
+        else:
+            from twists import draw_and_apply_twist
+            draw_and_apply_twist(self, triggerer, play_by_play_lines)
         play_by_play_lines.append("")  # blank line for readability
 
     def _active_stunners_near(self, player):
@@ -737,7 +744,7 @@ def _run_single_simulation(character_names, board_type=DEFAULT_BOARD_TYPE, rando
     play_by_play_lines.insert(0, f"Board: {game.board.get_display_name()}")
     return turns, final_placements, play_by_play_lines, game.board.board_type
 
-def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, speeddemon_threshold=4, speeddemon_starting_points=3, speeddemon_check_timing="start", showoff_threshold=5, random_starting_bronze=True, antimag_main_move_penalty=1, spoilsport_threshold=5, nemesis_warp_range=5, random_board_pool=None, cheatah_alt_mode=True):
+def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, speeddemon_threshold=4, speeddemon_starting_points=3, speeddemon_check_timing="start", showoff_threshold=5, random_starting_bronze=True, antimag_main_move_penalty=1, spoilsport_threshold=5, nemesis_warp_range=5, random_board_pool=None, cheatah_alt_mode=True, forced_twist=None):
     """Run multiple simulations and return statistics with proper ability tracking.
 
     Args:
@@ -774,7 +781,7 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
             # Run the simulation with the specified board type.
             # Per-race log lines are capped to keep memory bounded with V1+V2
             # reactive cascades (Mole+Romantic fan-out + bonus turns).
-            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, speeddemon_threshold=speeddemon_threshold, speeddemon_starting_points=speeddemon_starting_points, speeddemon_check_timing=speeddemon_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, nemesis_warp_range=nemesis_warp_range, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode)
+            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, speeddemon_threshold=speeddemon_threshold, speeddemon_starting_points=speeddemon_starting_points, speeddemon_check_timing=speeddemon_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, nemesis_warp_range=nemesis_warp_range, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode, forced_twist=forced_twist)
             play_by_play_lines = _CappedLogList(cap=5000) if collect_detailed_logs else _CappedLogList(cap=500)
             turns, final_placements = game.run(play_by_play_lines)
             

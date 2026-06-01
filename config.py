@@ -62,7 +62,6 @@ from characters.hopfrog import Hopfrog
 from characters.gloth import Gloth
 from characters.soulmate import Soulmate
 from characters.tail import Tail
-from characters.apprentice import Apprentice
 from characters.kraken import Kraken
 from characters.critic import Critic
 from characters.showoff import ShowOff
@@ -130,7 +129,6 @@ character_abilities = {
     "Gloth": Gloth,
     "Soulmate": Soulmate,
     "Tail": Tail,
-    "Apprentice": Apprentice,
     "Kraken": Kraken,
     "Critic": Critic,
     "ShowOff": ShowOff,

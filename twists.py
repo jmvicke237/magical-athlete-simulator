@@ -30,7 +30,6 @@ def get_twist_pool():
         "WEREMOUTH Containment Breach",
         "Mirror World",
         "Roast Chicken",
-        "Fans Demand Chaos",
         "Bonkbug",
         "Randomness Ceased",
         "Season Finale",
@@ -41,13 +40,27 @@ def get_twist_pool():
 
 def draw_and_apply_twist(game, triggerer, play_by_play_lines, exclude=None):
     """Pick a random twist (excluding `exclude`) and apply it. Returns the
-    name of the twist drawn so callers (like Fans Demand Chaos) can track
-    what's been used and avoid drawing it again in a chain."""
+    name of the twist drawn."""
     pool = [t for t in get_twist_pool() if exclude is None or t not in exclude]
     if not pool:
         return None
     name = random.choice(pool)
     play_by_play_lines.append(f"!! TWIST DRAWN: {name} !!")
+    APPLY_FUNCS[name](game, triggerer, play_by_play_lines)
+    game.twists_drawn.append(name)
+    return name
+
+
+def apply_named_twist(game, triggerer, play_by_play_lines, name):
+    """Force a specific twist by name (used when the simulator is configured
+    to pin a particular twist instead of drawing randomly). Unknown names
+    fall back to a random draw with a warning."""
+    if name not in APPLY_FUNCS:
+        play_by_play_lines.append(
+            f"!! TWIST '{name}' unknown — falling back to random draw."
+        )
+        return draw_and_apply_twist(game, triggerer, play_by_play_lines)
+    play_by_play_lines.append(f"!! TWIST (forced): {name} !!")
     APPLY_FUNCS[name](game, triggerer, play_by_play_lines)
     game.twists_drawn.append(name)
     return name
@@ -126,22 +139,6 @@ def apply_mirror_world(game, _triggerer, lines):
         lines.append(
             f"    {p.name} ({p.piece}): {old} -> {p.position}"
         )
-
-
-def apply_fans_demand_chaos(game, triggerer, lines):
-    """Draw 2 more twists and apply both. To prevent runaway recursion we
-    don't redraw Fans Demand Chaos itself — only the other 11 twists are in
-    the inner pool. The chosen pair runs in draw order; if either is also a
-    chain-type twist we'd allow it in principle (no current twist chains
-    further), but Swap Meet is still excluded."""
-    lines.append("  Fans Demand Chaos: drawing 2 more twists...")
-    used = ["Fans Demand Chaos"]
-    for i in range(2):
-        name = draw_and_apply_twist(game, triggerer, lines, exclude=used)
-        if name is None:
-            break
-        used.append(name)
-        lines.append(f"  (chained twist {i + 1} of 2: {name})")
 
 
 # ---------------------------------------------------------------------------
@@ -332,7 +329,6 @@ APPLY_FUNCS = {
     "WEREMOUTH Containment Breach": apply_weremouth_breach,
     "Mirror World": apply_mirror_world,
     "Roast Chicken": apply_roast_chicken,
-    "Fans Demand Chaos": apply_fans_demand_chaos,
     "Bonkbug": apply_bonkbug,
     "Randomness Ceased": apply_randomness_ceased,
     "Season Finale": apply_season_finale,

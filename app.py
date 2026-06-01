@@ -79,10 +79,27 @@ with tab_race:
             value=True,
             help="Mild layout, but the first racer to pass space 13 "
                  "triggers a random Twist that applies for the rest of "
-                 "the race (12 possible twists, ranging from Conveyor "
+                 "the race (11 possible twists, ranging from Conveyor "
                  "Belt +3 to Mirror World position-flip to a ghost "
                  "W.E.R.E.M.O.U.T.H. that eliminates passed racers).",
         )
+
+    # Twist selector — pin a specific twist for every Twists race, or
+    # leave on "All" to draw randomly from the pool. Only meaningful when
+    # the Twists board type is selected (otherwise ignored).
+    if use_twists:
+        from twists import get_twist_pool
+        forced_twist_choice = st.selectbox(
+            "Twist (when Twists board is used)",
+            ["All"] + get_twist_pool(),
+            index=0,
+            help="\"All\" draws a random twist per race (default). Pick a "
+                 "specific twist to force it on every race that uses the "
+                 "Twists board — useful for isolating a single twist's "
+                 "effect on character win rates.",
+        )
+    else:
+        forced_twist_choice = "All"
 
     # ---- Character selection mode ----------------------------------------
     char_mode = st.radio(
@@ -305,6 +322,7 @@ with tab_race:
                 nemesis_warp_range=int(nemesis_warp_range),
                 random_board_pool=random_board_pool,
                 cheatah_alt_mode=cheatah_alt_mode,
+                forced_twist=forced_twist_choice,
             )
 
         st.success(f"Completed {num_simulations} simulations.")

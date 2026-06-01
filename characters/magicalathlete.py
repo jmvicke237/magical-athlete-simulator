@@ -75,7 +75,6 @@ class MagicalAthlete(Character):
         # intentionally honored — Inchworm interrupts the spell.
         game.resolve_phase(PowerPhase.DIE_ROLL_TRIGGER, self, play_by_play_lines,
                            context={'roll': roll})
-        game._last_main_roll = self.last_roll
 
         if not self.skip_main_move:
             play_by_play_lines.append(

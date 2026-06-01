@@ -173,6 +173,22 @@ class MagicalAthleteApp:
         ttk.Checkbutton(board_frame, text="Wild", variable=self.board_wild_var).pack(anchor="w")
         ttk.Checkbutton(board_frame, text="Sportals", variable=self.board_sportals_var).pack(anchor="w")
         ttk.Checkbutton(board_frame, text="Twists", variable=self.board_twists_var).pack(anchor="w")
+
+        # Twists pin: "All" = draw randomly each race (default), or pick a
+        # specific twist to force on every race that uses the Twists board.
+        # Only meaningful when the Twists checkbox above is ticked.
+        from twists import get_twist_pool
+        twist_frame = ttk.Frame(board_frame)
+        twist_frame.pack(anchor="w", pady=(4, 0))
+        ttk.Label(twist_frame, text="Force twist:").pack(side="left")
+        self.forced_twist_var = tk.StringVar(value="All")
+        ttk.Combobox(
+            twist_frame,
+            values=["All"] + get_twist_pool(),
+            textvariable=self.forced_twist_var,
+            width=24,
+            state="readonly",
+        ).pack(side="left", padx=4)
         
         # Edition selection
         ttk.Label(left_frame, text="Edition:").grid(row=3, column=0, padx=5, pady=5, sticky="nw")
@@ -591,6 +607,7 @@ class MagicalAthleteApp:
         spoilsport_threshold = self.spoilsport_threshold_var.get()
         nemesis_warp_range = self.nemesis_warp_range_var.get()
         cheatah_alt_mode = self.cheatah_alt_mode_var.get()
+        forced_twist = self.forced_twist_var.get()
         if len(allowed) < num_racers:
             messagebox.showerror(
                 "Not enough racers",
@@ -619,7 +636,7 @@ class MagicalAthleteApp:
                 # Updated to handle the additional returns including chip statistics and board type counts
                 # collect_detailed_logs=True because frontend has an export logs feature
                 average_turns, average_finish_positions, all_play_by_play, ability_activations, appearance_count, chip_stats, board_type_counts, win_counts, turns_by_board = run_simulations(
-                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, speeddemon_threshold=speeddemon_threshold, speeddemon_starting_points=speeddemon_starting_points, speeddemon_check_timing=speeddemon_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, nemesis_warp_range=nemesis_warp_range, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode
+                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, speeddemon_threshold=speeddemon_threshold, speeddemon_starting_points=speeddemon_starting_points, speeddemon_check_timing=speeddemon_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, nemesis_warp_range=nemesis_warp_range, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode, forced_twist=forced_twist
                 )
 
                 # Display results with ability data included
