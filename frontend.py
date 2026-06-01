@@ -459,7 +459,7 @@ class MagicalAthleteApp:
         if all_turns:
             avg_total = sum(all_turns) / len(all_turns)
             self.tournament_results_text.insert(tk.END, f"Average number of turns per race: {avg_total:.2f}\n")
-            for bt in ("Mild", "Wild", "Sportals"):
+            for bt in ("Mild", "Wild", "Sportals", "Twists"):
                 bt_turns = [r["turns"] for r in race_results if r.get("board_type") == bt and "turns" in r]
                 if bt_turns:
                     self.tournament_results_text.insert(tk.END,
@@ -676,7 +676,7 @@ class MagicalAthleteApp:
         self.race_results_text.insert(tk.END, f"Completed {self.num_simulations_var.get()} simulations with {self.num_racers_var.get()} racers each.\n\n")
         self.race_results_text.insert(tk.END, f"Average number of turns per race: {average_turns:.2f}\n")
         if turns_by_board:
-            for label in ("Mild", "Wild", "Sportals"):
+            for label in ("Mild", "Wild", "Sportals", "Twists"):
                 avg = turns_by_board.get(label)
                 self.race_results_text.insert(tk.END,
                     f"  {label} board: {avg:.2f}\n" if avg is not None else f"  {label} board: —\n")
