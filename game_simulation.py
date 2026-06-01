@@ -7,17 +7,17 @@ from power_system import PowerPhase
 from debug_utils import TurnEventCapExceeded
 
 class Game:
-    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", showoff_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=5, penguin_recovery_move=3, buddy_warp_range=3, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
+    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, speeddemon_threshold=4, speeddemon_starting_points=0, speeddemon_check_timing="end", showoff_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=5, penguin_recovery_move=3, nemesis_warp_range=5, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
         self.players = []
-        self.prometheus_threshold = prometheus_threshold  # Lead size that triggers Prometheus self-elimination (strict > comparison)
-        self.prometheus_check_timing = prometheus_check_timing  # "start" or "end" — when the elimination check fires
-        self._prometheus_starting_points = prometheus_starting_points  # Granted as bronze chips after player creation
+        self.speeddemon_threshold = speeddemon_threshold  # Lead size that triggers SpeedDemon self-elimination (strict > comparison)
+        self.speeddemon_check_timing = speeddemon_check_timing  # "start" or "end" — when the elimination check fires
+        self._speeddemon_starting_points = speeddemon_starting_points  # Granted as bronze chips after player creation
         self.showoff_threshold = showoff_threshold  # ShowOff stops rolling once total >= this
         self._random_starting_bronze = random_starting_bronze  # Each racer gets random 0-5 starting bronze chips
         self._antimag_main_move_penalty = max(0, int(antimag_main_move_penalty))  # Subtracted from the main-move spaces of any racer strictly ahead of an active AntimagicalAthlete. Canonical rule is 1 (the -1 is part of Antimag's power); 0 disables it entirely for testing.
         self.spoilsport_threshold = max(1, int(spoilsport_threshold))  # Minimum lead (in spaces) every other racer must have over Spoilsport before they cancel the race.
         self.penguin_recovery_move = max(0, int(penguin_recovery_move))  # Spaces a tripped Penguin auto-moves on a recovery turn; 0 = revert to normal trip skip-main-move behavior.
-        self.buddy_warp_range = max(0, int(buddy_warp_range))  # Max distance (inclusive) between Buddy and their picked friend that lets the pre-move warp fire; 0 disables the warp.
+        self.nemesis_warp_range = max(0, int(nemesis_warp_range))  # Max distance (inclusive) between Nemesis and their picked friend that lets the pre-move warp fire; 0 disables the warp.
         self.penguin_alt_mode = bool(penguin_alt_mode)  # Switches Penguin between default (trip-on-pass, recover via penguin_recovery_move) and alt (trip-on-share-space, recover via doubled roll).
         self.cheatah_alt_mode = bool(cheatah_alt_mode)  # When True, Cheatah moves double the chosen value on a wrong guess (default: moves the chosen value).
         
@@ -79,15 +79,15 @@ class Game:
                 g, s, b = self._chip_baseline[id(player)]
                 self._chip_baseline[id(player)] = (g, s, b + bonus)
 
-        # Grant Prometheus starting bronze chips (overrides everything for
-        # Prometheus — including any natural chips and any random bonus).
+        # Grant SpeedDemon starting bronze chips (overrides everything for
+        # SpeedDemon — including any natural chips and any random bonus).
         # Baseline updated to match so delta starts at 0.
-        if self._prometheus_starting_points > 0:
+        if self._speeddemon_starting_points > 0:
             for player in self.players:
-                if player.piece == "Prometheus":
-                    player.bronze_chips = self._prometheus_starting_points
+                if player.piece == "SpeedDemon":
+                    player.bronze_chips = self._speeddemon_starting_points
                     g, s, _ = self._chip_baseline[id(player)]
-                    self._chip_baseline[id(player)] = (g, s, self._prometheus_starting_points)
+                    self._chip_baseline[id(player)] = (g, s, self._speeddemon_starting_points)
 
     def _create_players(self, character_names, random_turn_order):
         for i, name in enumerate(character_names):
@@ -158,8 +158,8 @@ class Game:
         for player in self.players:
             if player.piece == "Mastermind":
                 player.make_prediction(self, play_by_play_lines)
-            elif player.piece == "Buddy":
-                player.pick_buddy(self, play_by_play_lines)
+            elif player.piece == "Nemesis":
+                player.pick_nemesis(self, play_by_play_lines)
 
         while not self.should_game_end(play_by_play_lines) and turns < MAX_TURNS:
             turns += 1
@@ -198,7 +198,7 @@ class Game:
                     break
                 self.next_player()
 
-        # End-of-race hooks (e.g., Sandbag's no-corner bonus). Antimag
+        # End-of-race hooks (e.g., Gloth's no-corner bonus). Antimag
         # suppression applies — racers ahead of Antimag don't get end-of-race powers.
         for player in self.players:
             if not self.is_power_suppressed_for(player):
@@ -306,7 +306,7 @@ class Game:
 
         Use this instead of bare random.randint anywhere a CHARACTER ROLLS
         a die that the game treats as a roll (main move, Duelist duel,
-        TheHose, Soulmate, Diceman, ShowOff). Internal randoms that
+        TheHose, Soulmate, MrDiceGuy, ShowOff). Internal randoms that
         the spec doesn't call rolls — Genius's lucky number, Cheatah's
         chosen value/guess, Mole's leader tiebreak, MagicalAthlete spell
         target picks — stay on random.randint.
@@ -314,7 +314,7 @@ class Game:
         Each override is an ability use: every adjacent Stunner is credited
         via register_ability_use, which also triggers Scoocher (Scoocher's
         rule is to react to any ability use, and a roll forced to 1 is an
-        ability use). This can fire many times per turn (Diceman's 6 dice,
+        ability use). This can fire many times per turn (MrDiceGuy's 6 dice,
         ShowOff's chain) — that's intentional."""
         nearby = self._active_stunners_near(player)
         if nearby:
@@ -546,7 +546,7 @@ class Game:
     def get_chip_statistics(self):
         """Returns chip DELTAs (current - starting) for each character. The
         avg-points metric should reflect points earned during the race, not
-        chips seeded before it (random_starting_bronze, prometheus_starting_points).
+        chips seeded before it (random_starting_bronze, speeddemon_starting_points).
         Negative values are possible (e.g., Hotel charges, Spoilsport revokes)."""
         chip_stats = {}
         baseline = getattr(self, '_chip_baseline', {})
@@ -596,7 +596,7 @@ def _run_single_simulation(character_names, board_type=DEFAULT_BOARD_TYPE, rando
     play_by_play_lines.insert(0, f"Board: {game.board.get_display_name()}")
     return turns, final_placements, play_by_play_lines, game.board.board_type
 
-def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, prometheus_threshold=3, prometheus_starting_points=0, prometheus_check_timing="end", showoff_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=5, penguin_recovery_move=3, buddy_warp_range=3, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
+def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, speeddemon_threshold=4, speeddemon_starting_points=0, speeddemon_check_timing="end", showoff_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=5, penguin_recovery_move=3, nemesis_warp_range=5, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
     """Run multiple simulations and return statistics with proper ability tracking.
 
     Args:
@@ -633,7 +633,7 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
             # Run the simulation with the specified board type.
             # Per-race log lines are capped to keep memory bounded with V1+V2
             # reactive cascades (Mole+Romantic fan-out + bonus turns).
-            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, penguin_recovery_move=penguin_recovery_move, buddy_warp_range=buddy_warp_range, penguin_alt_mode=penguin_alt_mode, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode)
+            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, speeddemon_threshold=speeddemon_threshold, speeddemon_starting_points=speeddemon_starting_points, speeddemon_check_timing=speeddemon_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, penguin_recovery_move=penguin_recovery_move, nemesis_warp_range=nemesis_warp_range, penguin_alt_mode=penguin_alt_mode, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode)
             play_by_play_lines = _CappedLogList(cap=5000) if collect_detailed_logs else _CappedLogList(cap=500)
             turns, final_placements = game.run(play_by_play_lines)
             

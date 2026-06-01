@@ -49,7 +49,7 @@ class Board:
         SPORTALS_PORTAL_PAIRS. Pairs overwrite the corner space at 15
         when applicable — characters that reference the corner read
         board.corner_position (an int) rather than the space type, so
-        Blimp / Sandbag / SilverSpoon still work."""
+        Blimp / Gloth / NepoBaby still work."""
         for a, b in self.SPORTALS_PORTAL_PAIRS:
             self.spaces[a] = PortalSpace(b)
             self.spaces[b] = PortalSpace(a)

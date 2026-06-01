@@ -7,7 +7,7 @@ class Stunner(Character):
     """Other racers within 1 space of me roll a 1 for all rolls.
 
     Not limited to the main move: any die a stunned racer rolls — Duelist
-    duels, TheHose, Soulmate's soulmate-roll, Diceman's six dice,
+    duels, TheHose, Soulmate's soulmate-roll, MrDiceGuy's six dice,
     ShowOff's keep-rolling chain — comes up 1.
 
     Implementation: Game.roll_die() consults Game.is_near_stunner(player)
@@ -25,7 +25,7 @@ class Stunner(Character):
     Note: each override is an ability use — it credits the adjacent Stunner(s)
     with an ability activation AND triggers Scoocher (Scoocher reacts to any
     ability use, and a roll forced to 1 is an ability use). This can fire
-    many times per turn (Diceman's 6 dice, ShowOff's chain) — that's
+    many times per turn (MrDiceGuy's 6 dice, ShowOff's chain) — that's
     intentional. Play-by-play prints a Stunner-forces line on each override
     so the cause is visible.
     """

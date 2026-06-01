@@ -197,21 +197,21 @@ class MagicalAthleteApp:
         self.selected_characters = []
         self.character_checkboxes = []
 
-        # Prometheus tweaks (only matter if Prometheus is in the race)
-        ttk.Label(left_frame, text="Prometheus elim threshold:").grid(row=6, column=0, padx=5, pady=5, sticky="w")
-        self.prometheus_threshold_var = tk.IntVar(value=2)
-        ttk.Spinbox(left_frame, from_=0, to=30, textvariable=self.prometheus_threshold_var, width=5).grid(row=6, column=1, padx=5, pady=5, sticky="w")
+        # SpeedDemon tweaks (only matter if SpeedDemon is in the race)
+        ttk.Label(left_frame, text="SpeedDemon elim threshold:").grid(row=6, column=0, padx=5, pady=5, sticky="w")
+        self.speeddemon_threshold_var = tk.IntVar(value=2)
+        ttk.Spinbox(left_frame, from_=0, to=30, textvariable=self.speeddemon_threshold_var, width=5).grid(row=6, column=1, padx=5, pady=5, sticky="w")
 
-        ttk.Label(left_frame, text="Prometheus starting points:").grid(row=7, column=0, padx=5, pady=5, sticky="w")
-        self.prometheus_starting_points_var = tk.IntVar(value=1)
-        ttk.Spinbox(left_frame, from_=0, to=30, textvariable=self.prometheus_starting_points_var, width=5).grid(row=7, column=1, padx=5, pady=5, sticky="w")
+        ttk.Label(left_frame, text="SpeedDemon starting points:").grid(row=7, column=0, padx=5, pady=5, sticky="w")
+        self.speeddemon_starting_points_var = tk.IntVar(value=1)
+        ttk.Spinbox(left_frame, from_=0, to=30, textvariable=self.speeddemon_starting_points_var, width=5).grid(row=7, column=1, padx=5, pady=5, sticky="w")
 
-        ttk.Label(left_frame, text="Prometheus check at:").grid(row=8, column=0, padx=5, pady=5, sticky="nw")
-        self.prometheus_check_timing_var = tk.StringVar(value="start")
+        ttk.Label(left_frame, text="SpeedDemon check at:").grid(row=8, column=0, padx=5, pady=5, sticky="nw")
+        self.speeddemon_check_timing_var = tk.StringVar(value="start")
         check_timing_frame = ttk.Frame(left_frame)
         check_timing_frame.grid(row=8, column=1, padx=5, pady=5, sticky="w")
-        ttk.Radiobutton(check_timing_frame, text="Start of turn", variable=self.prometheus_check_timing_var, value="start").pack(anchor="w")
-        ttk.Radiobutton(check_timing_frame, text="End of turn", variable=self.prometheus_check_timing_var, value="end").pack(anchor="w")
+        ttk.Radiobutton(check_timing_frame, text="Start of turn", variable=self.speeddemon_check_timing_var, value="start").pack(anchor="w")
+        ttk.Radiobutton(check_timing_frame, text="End of turn", variable=self.speeddemon_check_timing_var, value="end").pack(anchor="w")
 
         # ShowOff riskiness — total threshold to stop rolling. Higher = riskier.
         ttk.Label(left_frame, text="ShowOff stop-at:").grid(row=9, column=0, padx=5, pady=5, sticky="w")
@@ -240,11 +240,11 @@ class MagicalAthleteApp:
         self.penguin_recovery_move_var = tk.IntVar(value=6)
         ttk.Spinbox(left_frame, from_=0, to=12, textvariable=self.penguin_recovery_move_var, width=5).grid(row=13, column=1, padx=5, pady=5, sticky="w")
 
-        # Buddy warp range: max distance to picked friend that allows the
+        # Nemesis warp range: max distance to picked friend that allows the
         # pre-Main-Move warp to fire. 0 = warp disabled (still picks a friend).
-        ttk.Label(left_frame, text="Buddy warp range:").grid(row=14, column=0, padx=5, pady=5, sticky="w")
-        self.buddy_warp_range_var = tk.IntVar(value=5)
-        ttk.Spinbox(left_frame, from_=0, to=15, textvariable=self.buddy_warp_range_var, width=5).grid(row=14, column=1, padx=5, pady=5, sticky="w")
+        ttk.Label(left_frame, text="Nemesis warp range:").grid(row=14, column=0, padx=5, pady=5, sticky="w")
+        self.nemesis_warp_range_var = tk.IntVar(value=5)
+        ttk.Spinbox(left_frame, from_=0, to=15, textvariable=self.nemesis_warp_range_var, width=5).grid(row=14, column=1, padx=5, pady=5, sticky="w")
 
         # Penguin alt mode: trigger on share-space, recover via doubled roll
         # (instead of trip-on-pass + fixed-N recovery).
@@ -589,15 +589,15 @@ class MagicalAthleteApp:
         # Get edition and the allowed character pool
         edition = self.race_edition_var.get()
         allowed = list(get_characters_by_edition(edition).keys())
-        prometheus_threshold = self.prometheus_threshold_var.get()
-        prometheus_starting_points = self.prometheus_starting_points_var.get()
-        prometheus_check_timing = self.prometheus_check_timing_var.get()
+        speeddemon_threshold = self.speeddemon_threshold_var.get()
+        speeddemon_starting_points = self.speeddemon_starting_points_var.get()
+        speeddemon_check_timing = self.speeddemon_check_timing_var.get()
         showoff_threshold = self.showoff_threshold_var.get()
         random_starting_bronze = self.random_starting_bronze_var.get()
         antimag_main_move_penalty = self.antimag_main_move_penalty_var.get()
         spoilsport_threshold = self.spoilsport_threshold_var.get()
         penguin_recovery_move = self.penguin_recovery_move_var.get()
-        buddy_warp_range = self.buddy_warp_range_var.get()
+        nemesis_warp_range = self.nemesis_warp_range_var.get()
         penguin_alt_mode = self.penguin_alt_mode_var.get()
         cheatah_alt_mode = self.cheatah_alt_mode_var.get()
         if len(allowed) < num_racers:
@@ -628,7 +628,7 @@ class MagicalAthleteApp:
                 # Updated to handle the additional returns including chip statistics and board type counts
                 # collect_detailed_logs=True because frontend has an export logs feature
                 average_turns, average_finish_positions, all_play_by_play, ability_activations, appearance_count, chip_stats, board_type_counts, win_counts, turns_by_board = run_simulations(
-                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, prometheus_threshold=prometheus_threshold, prometheus_starting_points=prometheus_starting_points, prometheus_check_timing=prometheus_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, penguin_recovery_move=penguin_recovery_move, buddy_warp_range=buddy_warp_range, penguin_alt_mode=penguin_alt_mode, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode
+                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, speeddemon_threshold=speeddemon_threshold, speeddemon_starting_points=speeddemon_starting_points, speeddemon_check_timing=speeddemon_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, penguin_recovery_move=penguin_recovery_move, nemesis_warp_range=nemesis_warp_range, penguin_alt_mode=penguin_alt_mode, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode
                 )
 
                 # Display results with ability data included

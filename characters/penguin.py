@@ -100,7 +100,7 @@ class Penguin(Character):
 
     def on_another_player_jump(self, jumped_player, game, play_by_play_lines):
         # Alt mode only — case "a racer warps onto me": same logic as
-        # on_another_player_move but for jumps (Mole, Buddy, portals,
+        # on_another_player_move but for jumps (Mole, Nemesis, portals,
         # MagicalAthlete spells, swap_positions). Per the warp rule, a
         # warp does trigger a "stop" event (just not a "pass"), so
         # share-space at the destination of a real warp does trip Penguin.

@@ -10,7 +10,7 @@ class Soulmate(Character):
 
     The soulmate roll is a separate d6 — it doesn't go through main_roll, so
     it doesn't fire other characters' DIE_ROLL_TRIGGERs (Inchworm on a 1,
-    StinkEye on a 3). PartyPooper's "any d6 of 6 forces a reroll" still applies
+    LeSaboteur on a 3). PartyPooper's "any d6 of 6 forces a reroll" still applies
     via the shared _trigger_party_pooper helper.
     """
 

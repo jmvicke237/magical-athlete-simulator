@@ -43,14 +43,14 @@ from characters.dummy2 import Dummy2
 from characters.overtaker import Overtaker
 from characters.kingtripper import Kingtripper
 from characters.diva import Diva
-from characters.diceman import Diceman
+from characters.mrdiceguy import MrDiceGuy
 from characters.normalharry import NormalHarry
-from characters.stinkeye import StinkEye
-from characters.silverspoon import SilverSpoon
+from characters.lesaboteur import LeSaboteur
+from characters.nepobaby import NepoBaby
 from characters.spoilsport import Spoilsport
 from characters.cheatah import Cheatah
 from characters.hogknight import HogKnight
-from characters.prometheus import Prometheus
+from characters.speeddemon import SpeedDemon
 from characters.partypooper import PartyPooper
 from characters.blunderdog import Blunderdog
 from characters.thehose import TheHose
@@ -59,17 +59,17 @@ from characters.stunner import Stunner
 from characters.stepdad import Stepdad
 from characters.antimagicalathlete import AntimagicalAthlete
 from characters.hopfrog import Hopfrog
-from characters.sandbag import Sandbag
+from characters.gloth import Gloth
 from characters.soulmate import Soulmate
 from characters.tail import Tail
 from characters.apprentice import Apprentice
 from characters.blackhole import BlackHole
 from characters.buttinsky import Buttinsky
 from characters.showoff import ShowOff
-from characters.showboat import ShowBoat
+from characters.streaker import Streaker
 from characters.hotel import Hotel
 from characters.penguin import Penguin
-from characters.buddy import Buddy
+from characters.nemesis import Nemesis
 from characters.magicalathlete import MagicalAthlete
 
 character_abilities = {
@@ -111,14 +111,14 @@ character_abilities = {
     "Overtaker": Overtaker,
     "Kingtripper": Kingtripper,
     "Diva": Diva,
-    "Diceman": Diceman,
+    "MrDiceGuy": MrDiceGuy,
     "NormalHarry": NormalHarry,
-    "StinkEye": StinkEye,
-    "SilverSpoon": SilverSpoon,
+    "LeSaboteur": LeSaboteur,
+    "NepoBaby": NepoBaby,
     "Spoilsport": Spoilsport,
     "Cheatah": Cheatah,
     "HogKnight": HogKnight,
-    "Prometheus": Prometheus,
+    "SpeedDemon": SpeedDemon,
     "PartyPooper": PartyPooper,
     "Blunderdog": Blunderdog,
     "TheHose": TheHose,
@@ -127,17 +127,17 @@ character_abilities = {
     "Stepdad": Stepdad,
     "AntimagicalAthlete": AntimagicalAthlete,
     "Hopfrog": Hopfrog,
-    "Sandbag": Sandbag,
+    "Gloth": Gloth,
     "Soulmate": Soulmate,
     "Tail": Tail,
     "Apprentice": Apprentice,
     "BlackHole": BlackHole,
     "Buttinsky": Buttinsky,
     "ShowOff": ShowOff,
-    "ShowBoat": ShowBoat,
+    "Streaker": Streaker,
     "Hotel": Hotel,
     "Penguin": Penguin,
-    "Buddy": Buddy,
+    "Nemesis": Nemesis,
     "MagicalAthlete": MagicalAthlete,
 }
 

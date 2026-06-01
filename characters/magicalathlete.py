@@ -115,7 +115,7 @@ class MagicalAthlete(Character):
 
     def _spell_move_10(self, game, lines):
         """Spell 1: move 10 spaces. Pure straight movement — passes
-        detected by base.move trigger Banana/Penguin/ShowBoat etc.
+        detected by base.move trigger Banana/Penguin/Streaker etc.
         normally, but no extra trip-on-pass effect (that's spell 6)."""
         lines.append("  Spell 1: move 10.")
         self.move(game, lines, 10)

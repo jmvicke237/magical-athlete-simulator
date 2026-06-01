@@ -35,7 +35,7 @@ class Character:
         self.turn_start_position = 0
         self.last_roll = -1
         self.skip_main_move = False
-        self.main_move_multiplier = 1  # Each effect multiplies in (StinkEye -1, Blunderdog -1 or 3, etc.). Applied after ROLL_MODIFICATION; reset every turn.
+        self.main_move_multiplier = 1  # Each effect multiplies in (LeSaboteur -1, Blunderdog -1 or 3, etc.). Applied after ROLL_MODIFICATION; reset every turn.
         self.ability_activations = 0
         
         # Chip tracking
@@ -57,7 +57,7 @@ class Character:
         """
         self.turn_start_position = self.position
         self.last_roll = -1
-        self.main_move_multiplier = 1  # Reset each turn — effects (StinkEye, Blunderdog) compound by multiplying.
+        self.main_move_multiplier = 1  # Reset each turn — effects (LeSaboteur, Blunderdog) compound by multiplying.
 
         # Check if tripped
         if self.tripped:
@@ -101,7 +101,7 @@ class Character:
                 roll = context.get('roll', roll)
 
                 # Apply any move multiplier set during PRE_ROLL/DIE_ROLL_TRIGGER
-                # (StinkEye -1, Blunderdog -1 or 3, etc.). Effects compound multiplicatively.
+                # (LeSaboteur -1, Blunderdog -1 or 3, etc.). Effects compound multiplicatively.
                 if self.main_move_multiplier != 1:
                     new_roll = roll * self.main_move_multiplier
                     play_by_play_lines.append(
@@ -169,7 +169,7 @@ class Character:
         """If the roller isn't PartyPooper and an active PartyPooper is in
         the game, force a reroll: PartyPooper moves +1 and registers an ability
         use. Returns True if the caller should reroll. Used by base main_roll
-        and any subclass that overrides main_roll (Diceman)."""
+        and any subclass that overrides main_roll (MrDiceGuy)."""
         if self.piece == "PartyPooper":
             return False
         pp = next((p for p in game.players
@@ -296,7 +296,7 @@ class Character:
     def on_race_end(self, game, play_by_play_lines):
         """Called once per character at the end of the race, before final
         chip/standings summaries. Default no-op. Used by characters with
-        end-of-race effects (e.g., Sandbag's no-corner bonus)."""
+        end-of-race effects (e.g., Gloth's no-corner bonus)."""
         pass
 
     def on_another_player_move(self, moved_player, game, play_by_play_lines):

@@ -101,33 +101,33 @@ with tab_race:
     # that a single horizontal row got cramped.
     with st.expander("Advanced settings", expanded=False):
         with st.container(height=420):
-            st.markdown("**Prometheus**")
+            st.markdown("**SpeedDemon**")
             col_prom1, col_prom2, col_prom3 = st.columns(3)
             with col_prom1:
-                prometheus_threshold = st.number_input(
+                speeddemon_threshold = st.number_input(
                     "Threshold",
                     min_value=0,
                     max_value=20,
                     value=2,
                     step=1,
-                    help="If Prometheus is in the race, racers below this point "
-                         "total trigger Prometheus's bronze handout.",
+                    help="If SpeedDemon is in the race, racers below this point "
+                         "total trigger SpeedDemon's bronze handout.",
                 )
             with col_prom2:
-                prometheus_starting_points = st.number_input(
+                speeddemon_starting_points = st.number_input(
                     "Starting points",
                     min_value=0,
                     max_value=20,
                     value=1,
                     step=1,
-                    help="Bronze chips Prometheus starts with.",
+                    help="Bronze chips SpeedDemon starts with.",
                 )
             with col_prom3:
-                prometheus_check_timing = st.selectbox(
+                speeddemon_check_timing = st.selectbox(
                     "Check timing",
                     ["end", "start"],
                     index=1,
-                    help="When in the turn cycle Prometheus checks point totals.",
+                    help="When in the turn cycle SpeedDemon checks point totals.",
                 )
 
             st.divider()
@@ -198,17 +198,17 @@ with tab_race:
             )
 
             st.divider()
-            st.markdown("**Buddy**")
-            buddy_warp_range = st.slider(
+            st.markdown("**Nemesis**")
+            nemesis_warp_range = st.slider(
                 "Warp range",
                 min_value=0,
                 max_value=15,
                 value=5,
                 step=1,
-                help="Max distance (in spaces) between Buddy and their picked "
+                help="Max distance (in spaces) between Nemesis and their picked "
                      "friend that allows the pre-Main-Move warp to fire. "
                      "Default 3 matches the printed card. 0 = warp disabled "
-                     "(Buddy still picks a friend at race start, just never "
+                     "(Nemesis still picks a friend at race start, just never "
                      "warps).",
             )
 
@@ -300,15 +300,15 @@ with tab_race:
                 # Detailed logs are memory-heavy on Streamlit Cloud; skip them.
                 collect_detailed_logs=False,
                 allowed_characters=edition_chars,
-                prometheus_threshold=int(prometheus_threshold),
-                prometheus_starting_points=int(prometheus_starting_points),
-                prometheus_check_timing=prometheus_check_timing,
+                speeddemon_threshold=int(speeddemon_threshold),
+                speeddemon_starting_points=int(speeddemon_starting_points),
+                speeddemon_check_timing=speeddemon_check_timing,
                 showoff_threshold=int(showoff_threshold),
                 random_starting_bronze=random_starting_bronze,
                 antimag_main_move_penalty=int(antimag_main_move_penalty),
                 spoilsport_threshold=int(spoilsport_threshold),
                 penguin_recovery_move=int(penguin_recovery_move),
-                buddy_warp_range=int(buddy_warp_range),
+                nemesis_warp_range=int(nemesis_warp_range),
                 penguin_alt_mode=penguin_alt_mode,
                 random_board_pool=random_board_pool,
                 cheatah_alt_mode=cheatah_alt_mode,

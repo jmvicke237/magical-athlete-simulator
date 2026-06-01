@@ -6,7 +6,7 @@ from power_system import PowerPhase
 class Blunderdog(Character):
     """When I'm in last place at the start of my turn, my main move is tripled.
     Otherwise it's reversed. The multiplier applies to the final roll AFTER any
-    Coach/Gunk/etc. modifications (consistent with how StinkEye stacks)."""
+    Coach/Gunk/etc. modifications (consistent with how LeSaboteur stacks)."""
 
     POWER_PHASES = {PowerPhase.PRE_ROLL}
     EDITION = "v2"

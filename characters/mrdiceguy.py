@@ -1,12 +1,16 @@
-# diceman.py
+# mrdiceguy.py
 
 import random
 from collections import Counter
 from .base_character import Character
 
-class Diceman(Character):
-    """For my main move I roll six dice and move the highest number rolled twice or more.
-    If no value comes up twice, I don't move."""
+class MrDiceGuy(Character):
+    """I roll all six dice for my main move and pick any number that was rolled
+    more than once. If no value comes up twice, I don't move.
+
+    Simulator policy: out of all values that appeared 2+ times, the sim picks
+    the highest (optimal play for distance — the sim can't model strategic
+    positioning like avoiding a portal or trip space)."""
 
     POWER_PHASES = set()
     EDITION = "v2"
@@ -38,6 +42,6 @@ class Diceman(Character):
         play_by_play_lines.append(
             f"{self.name} ({self.piece}) final dice {sorted(rolls, reverse=True)} -> moves {result} ({note})"
         )
-        self.register_ability_use(game, play_by_play_lines, description="Diceman")
+        self.register_ability_use(game, play_by_play_lines, description="MrDiceGuy")
         self.last_roll = result
         return result

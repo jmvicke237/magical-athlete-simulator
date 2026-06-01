@@ -27,7 +27,7 @@ class AntimagicalAthlete(Character):
     stronger value (-2, -3, …) for balance experiments; 0 disables it
     entirely if you ever want to test pure power-suppression behavior.
 
-    Known limitations: characters with overridden main_roll (Diceman, Legs)
+    Known limitations: characters with overridden main_roll (MrDiceGuy, Legs)
     still use their override even when ahead — main_roll dispatch isn't
     centralized through a hookable check. The penalty DOES still apply to
     those characters since it lives in take_turn after main_roll.
