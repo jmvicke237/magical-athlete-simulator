@@ -58,7 +58,7 @@ with tab_race:
 
     # ---- Board type checkboxes -------------------------------------------
     st.write("**Board Types**")
-    col_mild, col_wild, col_sportals = st.columns(3)
+    col_mild, col_wild, col_sportals, col_twists = st.columns(4)
     with col_mild:
         use_mild = st.checkbox("Mild", value=True)
     with col_wild:
@@ -71,7 +71,17 @@ with tab_race:
                  "16-18, 17-22, 20-23, 24-28). Stopping on a portal warps "
                  "you to its partner. Per warp rules, this doesn't trigger "
                  "stopping/passing abilities — but share-space effects "
-                 "(Duelist, alt-Penguin) still fire at the destination.",
+                 "(Duelist) still fire at the destination.",
+        )
+    with col_twists:
+        use_twists = st.checkbox(
+            "Twists",
+            value=True,
+            help="Mild layout, but the first racer to pass space 13 "
+                 "triggers a random Twist that applies for the rest of "
+                 "the race (12 possible twists, ranging from Conveyor "
+                 "Belt +3 to Mirror World position-flip to a ghost "
+                 "W.E.R.E.M.O.U.T.H. that eliminates passed racers).",
         )
 
     # ---- Character selection mode ----------------------------------------
@@ -224,10 +234,9 @@ with tab_race:
 
     if run_clicked:
         # Validate inputs
-        if not (use_mild or use_wild or use_sportals):
+        if not (use_mild or use_wild or use_sportals or use_twists):
             st.error("Please select at least one board type.")
             st.stop()
-
         if char_mode == "Fixed":
             if not selected_chars:
                 st.error("Fixed mode is selected but no characters were chosen.")
@@ -257,6 +266,8 @@ with tab_race:
             selected_boards.append("Wild")
         if use_sportals:
             selected_boards.append("Sportals")
+        if use_twists:
+            selected_boards.append("Twists")
         if len(selected_boards) == 1:
             board_type = selected_boards[0]
             random_board_pool = None
@@ -302,14 +313,17 @@ with tab_race:
         mild_avg = average_turns_by_board.get("Mild")
         wild_avg = average_turns_by_board.get("Wild")
         sportals_avg = average_turns_by_board.get("Sportals")
-        m1, m2, m3, m4, m5, m6, m7 = st.columns(7)
+        twists_avg = average_turns_by_board.get("Twists")
+        m1, m2, m3, m4, m5, m6, m7, m8, m9 = st.columns(9)
         m1.metric("Avg turns / race", f"{average_turns:.2f}")
         m2.metric("Mild avg turns", f"{mild_avg:.2f}" if mild_avg is not None else "—")
         m3.metric("Wild avg turns", f"{wild_avg:.2f}" if wild_avg is not None else "—")
         m4.metric("Sportals avg turns", f"{sportals_avg:.2f}" if sportals_avg is not None else "—")
-        m5.metric("Mild races", board_type_counts.get("Mild", 0))
-        m6.metric("Wild races", board_type_counts.get("Wild", 0))
-        m7.metric("Sportals races", board_type_counts.get("Sportals", 0))
+        m5.metric("Twists avg turns", f"{twists_avg:.2f}" if twists_avg is not None else "—")
+        m6.metric("Mild races", board_type_counts.get("Mild", 0))
+        m7.metric("Wild races", board_type_counts.get("Wild", 0))
+        m8.metric("Sportals races", board_type_counts.get("Sportals", 0))
+        m9.metric("Twists races", board_type_counts.get("Twists", 0))
 
         # ---- Character performance table ---------------------------------
         st.subheader("Character Performance")

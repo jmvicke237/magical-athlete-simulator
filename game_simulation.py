@@ -57,6 +57,17 @@ class Game:
 
         # State history for detecting true infinite loops (repeating game states)
         self._state_history = []
+
+        # Twists board state. `twist_triggered` flips True the first time a
+        # racer crosses past space 13 on a Twists board, at which point a
+        # twist is drawn and applied. `twists_drawn` is an ordered list (more
+        # than one entry if Fans Demand Chaos chained). `twist_state` is a
+        # bag of per-twist persistent data — keys consumed by hooks below
+        # (conveyor_bonus, no_running_active, curse_wands_active, fixed_rolls,
+        # ghost_mouth, season_finale_active, bonkbug_active).
+        self.twist_triggered = False
+        self.twists_drawn = []
+        self.twist_state = {}
         
         self._create_players(character_names, random_turn_order)
 
@@ -192,6 +203,12 @@ class Game:
                         if self.should_game_end(play_by_play_lines):
                             break
 
+                    # Twists: after-turn hooks. Both fire only on Twists
+                    # boards once the twist has actually triggered.
+                    self._post_turn_twist_hooks(player, play_by_play_lines)
+                    if self.should_game_end(play_by_play_lines):
+                        break
+
                 if self.should_game_end(play_by_play_lines):
                     break
                 self.next_player()
@@ -295,6 +312,85 @@ class Game:
             # Reset count so subsequent turns start fresh.
             self._turn_event_count = 0
 
+    def _post_turn_twist_hooks(self, current_player, play_by_play_lines):
+        """Twists board: ongoing per-turn effects. Called after every
+        player's turn (and any queued bonus turns)."""
+        if not self.twist_triggered:
+            return
+
+        # WEREMOUTH Containment Breach: ghost WEREMOUTH rolls and moves,
+        # eliminating any active racer it passes (started behind, ended
+        # at-or-ahead). Stops moving once it hits the finish line. Doesn't
+        # take turns of its own and doesn't earn placement chips.
+        ghost = self.twist_state.get('ghost_mouth')
+        if ghost is not None and ghost['position'] < self.board.length:
+            roll = random.randint(1, 6)
+            start = ghost['position']
+            end = min(start + roll, self.board.length)
+            play_by_play_lines.append(
+                f"  Ghost W.E.R.E.M.O.U.T.H. rolls {roll} and moves from "
+                f"{start} to {end}."
+            )
+            for p in self.players:
+                if p.finished or p in self.eliminated_players:
+                    continue
+                # Pass detection: ghost crossed past this racer's space.
+                # If the ghost lands ON the racer, also eat them (sharing
+                # a space with a transformed WEREMOUTH = consumed).
+                if start <= p.position <= end:
+                    play_by_play_lines.append(
+                        f"    Ghost W.E.R.E.M.O.U.T.H. devours {p.name} ({p.piece})!"
+                    )
+                    self.eliminate_player(p, play_by_play_lines)
+            ghost['position'] = end
+
+        # Curse Wands: the player who just finished their turn rolls, and
+        # the turn pointer advances by that many slots (skipping racers).
+        if self.twist_state.get('curse_wands_active'):
+            roll = random.randint(1, 6)
+            play_by_play_lines.append(
+                f"  Curse Wands: {current_player.name} ({current_player.piece}) "
+                f"rolls {roll} — skipping {roll} racer(s) in turn order."
+            )
+            for _ in range(roll):
+                self.next_player()
+
+    def maybe_trigger_twist(self, mover, play_by_play_lines):
+        """Twists board hook. Called after every position change. The first
+        racer whose position reaches >= 14 (i.e., passes space 13) triggers
+        a single randomly-drawn twist that applies for the rest of the race.
+        No-op on non-Twists boards or after the twist has already fired."""
+        if self.twist_triggered:
+            return
+        if getattr(self.board, "board_type", None) != "Twists":
+            return
+        # Check ALL active racers — the trigger fires for whoever first
+        # crosses the threshold, which may not be `mover` (e.g., a HugeBaby
+        # push could send someone else past 13).
+        crossed = [
+            p for p in self.players
+            if not p.finished
+            and p not in self.eliminated_players
+            and p.position >= 14
+        ]
+        if not crossed:
+            return
+        # Prefer `mover` as the triggerer if they're among the crossed set
+        # (matches the intuitive "I rolled and passed space 13"); otherwise
+        # pick whoever's furthest along.
+        if mover is not None and mover in crossed:
+            triggerer = mover
+        else:
+            triggerer = max(crossed, key=lambda p: p.position)
+        self.twist_triggered = True
+        play_by_play_lines.append(
+            f"\n>>> {triggerer.name} ({triggerer.piece}) passed space 13 — "
+            f"a twist is drawn!"
+        )
+        from twists import draw_and_apply_twist
+        draw_and_apply_twist(self, triggerer, play_by_play_lines)
+        play_by_play_lines.append("")  # blank line for readability
+
     def _active_stunners_near(self, player):
         """Return the list of active (non-suppressed) Stunners within 1 space
         of `player`. Empty list if none. Used by roll_die for the override
@@ -343,6 +439,13 @@ class Game:
             for s in nearby:
                 s.register_ability_use(self, play_by_play_lines)
             return 1
+        # Twists: Randomness Ceased — this player's roll is locked at their
+        # snapshot value for the rest of the race. Clamped to the requested
+        # range so unusual callers (e.g., a hypothetical roll_die(low=4, high=6))
+        # still get a value in their expected band.
+        fixed = self.twist_state.get('fixed_rolls', {}).get(id(player))
+        if fixed is not None:
+            return max(low, min(fixed, high))
         return random.randint(low, high)
 
     def next_player(self):
@@ -367,7 +470,27 @@ class Game:
         if not player.finished:
             player.finished = True
             self.finished_players.append(player)
-            
+
+            # Twists: Season Finale — "racing for all the points." The first
+            # of the two finalists to finish takes BOTH gold and silver; the
+            # other finalist gets nothing. Both finishers go through this
+            # branch (no fall-through to the normal placement-chip logic) so
+            # the loser doesn't pick up an accidental silver.
+            if self.twist_state.get('season_finale_active'):
+                if len(self.finished_players) == 1:
+                    player.gold_chips += 1
+                    player.silver_chips += 1
+                    play_by_play_lines.append(
+                        f"{player.name} ({player.piece}) wins the Season Finale 1v1 — "
+                        f"takes the gold AND silver chips!"
+                    )
+                else:
+                    play_by_play_lines.append(
+                        f"{player.name} ({player.piece}) finished after losing the "
+                        f"Season Finale — no placement chips."
+                    )
+                return
+
             # Award gold or silver chips based on finish position
             if len(self.finished_players) == 1:
                 # First place gets a gold chip (5 points)
@@ -629,7 +752,7 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
     
     try:
         all_turns = []
-        turns_by_board = {"Mild": [], "Wild": [], "Sportals": []}
+        turns_by_board = {"Mild": [], "Wild": [], "Sportals": [], "Twists": []}
         finish_positions = {char: [] for char in character_abilities.keys()}
         ability_activations = {char: [] for char in character_abilities.keys()}
         appearance_count = {char: 0 for char in character_abilities.keys()}  # Track appearances
@@ -641,7 +764,7 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
         complete_logs = [] if collect_detailed_logs else None
 
         # Track board type usage
-        board_type_counts = {"Mild": 0, "Wild": 0, "Sportals": 0}
+        board_type_counts = {"Mild": 0, "Wild": 0, "Sportals": 0, "Twists": 0}
         
         sampling_pool = allowed_characters if allowed_characters else list(character_abilities.keys())
 

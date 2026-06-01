@@ -123,6 +123,31 @@ class Character:
                         )
                     roll = new_roll
 
+                # Twists: Conveyor Belt grants every active racer +N to their
+                # main move for the rest of the race. Stacks on top of all
+                # other modifiers / multipliers / penalties.
+                conveyor_bonus = getattr(game, 'twist_state', {}).get('conveyor_bonus', 0)
+                if conveyor_bonus:
+                    new_roll = roll + conveyor_bonus
+                    play_by_play_lines.append(
+                        f"  {self.name} ({self.piece}) rides the conveyor: +{conveyor_bonus} ({roll} -> {new_roll})"
+                    )
+                    roll = new_roll
+
+                # Twists: No Running by the scrying pool — final main-move
+                # distance of 6+ eliminates the racer instead of moving them.
+                # Skip the MOVEMENT phase but let the rest of the turn flow
+                # (POST_TURN cleanup, etc.) run naturally.
+                if getattr(game, 'twist_state', {}).get('no_running_active') and roll >= 6:
+                    play_by_play_lines.append(
+                        f"  {self.name} ({self.piece}) tried to run ({roll}) — "
+                        f"caught by the scrying pool and ELIMINATED!"
+                    )
+                    game.eliminate_player(self, play_by_play_lines)
+                    self.skip_main_move = True
+                    self.last_roll = 0
+                    roll = 0
+
                 self.last_roll = roll
 
                 # PHASE 4: MOVEMENT - Execute the move
@@ -286,6 +311,11 @@ class Character:
                 if other_player != self:
                     if not game.is_power_suppressed_for(other_player):
                         other_player.on_another_player_move(self, game, play_by_play_lines)
+
+            # Twists board: check if this move just pushed someone past
+            # space 13 (triggers a one-time random twist for the race).
+            # No-op on non-Twists boards or after the twist already fired.
+            game.maybe_trigger_twist(self, play_by_play_lines)
         finally:
             # Decrement recursion counter
             game._recursion_depths['movement'] -= 1
@@ -377,6 +407,9 @@ class Character:
                 if other_player != self:
                     if not game.is_power_suppressed_for(other_player):
                         other_player.on_another_player_jump(self, game, play_by_play_lines)
+
+            # Twists board: a warp can also push someone past space 13.
+            game.maybe_trigger_twist(self, play_by_play_lines)
         finally:
             # Decrement recursion counter
             game._recursion_depths['movement'] -= 1

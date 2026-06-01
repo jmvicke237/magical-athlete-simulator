@@ -167,10 +167,12 @@ class MagicalAthleteApp:
         self.board_mild_var = tk.BooleanVar(value=True)
         self.board_wild_var = tk.BooleanVar(value=True)
         self.board_sportals_var = tk.BooleanVar(value=True)
+        self.board_twists_var = tk.BooleanVar(value=True)
 
         ttk.Checkbutton(board_frame, text="Mild", variable=self.board_mild_var).pack(anchor="w")
         ttk.Checkbutton(board_frame, text="Wild", variable=self.board_wild_var).pack(anchor="w")
         ttk.Checkbutton(board_frame, text="Sportals", variable=self.board_sportals_var).pack(anchor="w")
+        ttk.Checkbutton(board_frame, text="Twists", variable=self.board_twists_var).pack(anchor="w")
         
         # Edition selection
         ttk.Label(left_frame, text="Edition:").grid(row=3, column=0, padx=5, pady=5, sticky="nw")
@@ -562,6 +564,8 @@ class MagicalAthleteApp:
             selected_boards.append("Wild")
         if self.board_sportals_var.get():
             selected_boards.append("Sportals")
+        if self.board_twists_var.get():
+            selected_boards.append("Twists")
 
         if not selected_boards:
             messagebox.showerror("Error", "Please select at least one board type.")
