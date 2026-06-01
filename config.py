@@ -63,8 +63,8 @@ from characters.gloth import Gloth
 from characters.soulmate import Soulmate
 from characters.tail import Tail
 from characters.apprentice import Apprentice
-from characters.blackhole import BlackHole
-from characters.buttinsky import Buttinsky
+from characters.kraken import Kraken
+from characters.critic import Critic
 from characters.showoff import ShowOff
 from characters.streaker import Streaker
 from characters.hotel import Hotel
@@ -131,8 +131,8 @@ character_abilities = {
     "Soulmate": Soulmate,
     "Tail": Tail,
     "Apprentice": Apprentice,
-    "BlackHole": BlackHole,
-    "Buttinsky": Buttinsky,
+    "Kraken": Kraken,
+    "Critic": Critic,
     "ShowOff": ShowOff,
     "Streaker": Streaker,
     "Hotel": Hotel,

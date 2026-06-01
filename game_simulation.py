@@ -7,7 +7,7 @@ from power_system import PowerPhase
 from debug_utils import TurnEventCapExceeded
 
 class Game:
-    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, speeddemon_threshold=4, speeddemon_starting_points=0, speeddemon_check_timing="end", showoff_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=5, penguin_recovery_move=3, nemesis_warp_range=5, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
+    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, speeddemon_threshold=4, speeddemon_starting_points=0, speeddemon_check_timing="end", showoff_threshold=5, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=5, nemesis_warp_range=5, random_board_pool=None, cheatah_alt_mode=False):
         self.players = []
         self.speeddemon_threshold = speeddemon_threshold  # Lead size that triggers SpeedDemon self-elimination (strict > comparison)
         self.speeddemon_check_timing = speeddemon_check_timing  # "start" or "end" — when the elimination check fires
@@ -16,9 +16,7 @@ class Game:
         self._random_starting_bronze = random_starting_bronze  # Each racer gets random 0-5 starting bronze chips
         self._antimag_main_move_penalty = max(0, int(antimag_main_move_penalty))  # Subtracted from the main-move spaces of any racer strictly ahead of an active AntimagicalAthlete. Canonical rule is 1 (the -1 is part of Antimag's power); 0 disables it entirely for testing.
         self.spoilsport_threshold = max(1, int(spoilsport_threshold))  # Minimum lead (in spaces) every other racer must have over Spoilsport before they cancel the race.
-        self.penguin_recovery_move = max(0, int(penguin_recovery_move))  # Spaces a tripped Penguin auto-moves on a recovery turn; 0 = revert to normal trip skip-main-move behavior.
-        self.nemesis_warp_range = max(0, int(nemesis_warp_range))  # Max distance (inclusive) between Nemesis and their picked friend that lets the pre-move warp fire; 0 disables the warp.
-        self.penguin_alt_mode = bool(penguin_alt_mode)  # Switches Penguin between default (trip-on-pass, recover via penguin_recovery_move) and alt (trip-on-share-space, recover via doubled roll).
+        self.nemesis_warp_range = max(0, int(nemesis_warp_range))  # Max distance (inclusive) between Nemesis and their picked target that lets the pre-move warp fire; 0 disables the warp.
         self.cheatah_alt_mode = bool(cheatah_alt_mode)  # When True, Cheatah moves double the chosen value on a wrong guess (default: moves the chosen value).
         
         # Handle board creation
@@ -596,7 +594,7 @@ def _run_single_simulation(character_names, board_type=DEFAULT_BOARD_TYPE, rando
     play_by_play_lines.insert(0, f"Board: {game.board.get_display_name()}")
     return turns, final_placements, play_by_play_lines, game.board.board_type
 
-def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, speeddemon_threshold=4, speeddemon_starting_points=0, speeddemon_check_timing="end", showoff_threshold=8, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=5, penguin_recovery_move=3, nemesis_warp_range=5, penguin_alt_mode=False, random_board_pool=None, cheatah_alt_mode=False):
+def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, speeddemon_threshold=4, speeddemon_starting_points=0, speeddemon_check_timing="end", showoff_threshold=5, random_starting_bronze=False, antimag_main_move_penalty=1, spoilsport_threshold=5, nemesis_warp_range=5, random_board_pool=None, cheatah_alt_mode=False):
     """Run multiple simulations and return statistics with proper ability tracking.
 
     Args:
@@ -633,7 +631,7 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
             # Run the simulation with the specified board type.
             # Per-race log lines are capped to keep memory bounded with V1+V2
             # reactive cascades (Mole+Romantic fan-out + bonus turns).
-            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, speeddemon_threshold=speeddemon_threshold, speeddemon_starting_points=speeddemon_starting_points, speeddemon_check_timing=speeddemon_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, penguin_recovery_move=penguin_recovery_move, nemesis_warp_range=nemesis_warp_range, penguin_alt_mode=penguin_alt_mode, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode)
+            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, speeddemon_threshold=speeddemon_threshold, speeddemon_starting_points=speeddemon_starting_points, speeddemon_check_timing=speeddemon_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, nemesis_warp_range=nemesis_warp_range, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode)
             play_by_play_lines = _CappedLogList(cap=5000) if collect_detailed_logs else _CappedLogList(cap=500)
             turns, final_placements = game.run(play_by_play_lines)
             

@@ -8,25 +8,24 @@ from power_system import PowerPhase
 
 class MagicalAthlete(Character):
     """For my main move, I cast a spell instead of moving:
-      1: I move 10.
+      1: I move 7.
       2: The last place racer warps to me.
-      3: I warp to any other racer and trip them.
-      4: I move 4, then swap any other 2 racers.
+      3: I warp to the lead racer and trip them.
+      4: I move 4 and take an extra turn.
       5: The lead racer moves backwards 5.
       6: I move 6 and trip any racer I pass.
 
     Spells gracefully fizzle (or partially fire) when prerequisites
     aren't met:
       - 2 / 3 / 5: need at least one other active racer.
-      - 4: MA always moves 4. The swap half requires at least two
-        other active racers; if not, the move-4 still fires and the
-        swap is just skipped.
-      - 5: also fizzles when MA is at or above the highest other
-        racer's position (no racer strictly ahead to push back).
+      - 3: if MA is already in the lead, fizzles (no racer strictly
+        ahead to warp to).
+      - 5: fizzles when MA is at or above the highest other racer's
+        position (no racer strictly ahead to push back).
 
     Stunner synergy note: when MA is within 1 of an active Stunner,
     game.roll_die forces every roll to 1, so MA casts spell 1 every
-    turn and moves 10 each turn. Faster than a vanilla d6 (3.5 avg)
+    turn and moves 7 each turn. Faster than a vanilla d6 (3.5 avg)
     by a wide margin — analogous to ShowOff's auto-finish synergy.
 
     Implementation: take_turn override bypasses the normal MOVEMENT phase
@@ -83,10 +82,10 @@ class MagicalAthlete(Character):
                 f"{self.name} ({self.piece}) casts a spell — rolled {roll}!"
             )
             spell = {
-                1: self._spell_move_10,
+                1: self._spell_move_7,
                 2: self._spell_warp_last_to_me,
-                3: self._spell_warp_to_any_and_trip,
-                4: self._spell_move_4_then_swap_two,
+                3: self._spell_warp_to_lead_and_trip,
+                4: self._spell_move_4_extra_turn,
                 5: self._spell_lead_back_5,
                 6: self._spell_move_6_trip_passed,
             }.get(roll)
@@ -113,12 +112,12 @@ class MagicalAthlete(Character):
     # Spells
     # ------------------------------------------------------------------
 
-    def _spell_move_10(self, game, lines):
-        """Spell 1: move 10 spaces. Pure straight movement — passes
+    def _spell_move_7(self, game, lines):
+        """Spell 1: move 7 spaces. Pure straight movement — passes
         detected by base.move trigger Banana/Penguin/Streaker etc.
         normally, but no extra trip-on-pass effect (that's spell 6)."""
-        lines.append("  Spell 1: move 10.")
-        self.move(game, lines, 10)
+        lines.append("  Spell 1: move 7.")
+        self.move(game, lines, 7)
 
     def _spell_warp_last_to_me(self, game, lines):
         """Spell 2: warp the last-place racer to MA's space. MA doesn't
@@ -137,18 +136,24 @@ class MagicalAthlete(Character):
         )
         last.jump(game, self.position, lines)
 
-    def _spell_warp_to_any_and_trip(self, game, lines):
-        """Spell 3: warp to a random other racer's space AND trip them
-        (they skip their next main move). No opt-out — if MA is in the
-        lead, MA warps backward to a random trailing racer (who then
-        gets tripped)."""
+    def _spell_warp_to_lead_and_trip(self, game, lines):
+        """Spell 3: warp to the lead racer's space AND trip them (they skip
+        their next main move). Fizzles if MA is in the lead — no racer
+        strictly ahead to target. Ties for lead broken randomly."""
         candidates = self._other_active_racers(game)
         if not candidates:
             lines.append("  Spell 3: no other racers — spell fizzles.")
             return
-        target = random.choice(candidates)
+        max_pos = max(p.position for p in candidates)
+        if max_pos <= self.position:
+            lines.append(
+                f"  Spell 3: no racer ahead of {self.name} — spell fizzles."
+            )
+            return
+        leaders = [p for p in candidates if p.position == max_pos]
+        target = random.choice(leaders)
         lines.append(
-            f"  Spell 3: warping to {target.name} ({target.piece}) at "
+            f"  Spell 3: warping to lead racer {target.name} ({target.piece}) at "
             f"space {target.position} and tripping them."
         )
         self.jump(game, target.position, lines)
@@ -158,25 +163,19 @@ class MagicalAthlete(Character):
                 f"    {target.name} ({target.piece}) is tripped."
             )
 
-    def _spell_move_4_then_swap_two(self, game, lines):
-        """Spell 4: MA moves 4, then swaps any two OTHER active racers'
-        positions (picked at random). Swap half fizzles cleanly if there
-        aren't at least two eligible other racers — MA still moves 4."""
-        lines.append("  Spell 4: move 4, then swap any other 2 racers.")
+    def _spell_move_4_extra_turn(self, game, lines):
+        """Spell 4: MA moves 4 and takes an extra turn. The extra turn is
+        queued (game.queued_turns) and fires after the current turn — same
+        mechanism Skipper and Hopfrog use. The queued-turn loop runs MA's
+        normal take_turn, which casts a fresh spell."""
+        lines.append("  Spell 4: move 4 and take an extra turn.")
         self.move(game, lines, 4)
-
-        candidates = self._other_active_racers(game)
-        if len(candidates) < 2:
-            lines.append(
-                f"    Spell 4 swap: fewer than 2 other racers — swap fizzles."
-            )
-            return
-        a, b = random.sample(candidates, 2)
+        if not hasattr(game, 'queued_turns'):
+            game.queued_turns = []
+        game.queued_turns.append(self)
         lines.append(
-            f"    Spell 4 swap: {a.name} ({a.piece}) at {a.position} "
-            f"<-> {b.name} ({b.piece}) at {b.position}."
+            f"    {self.name} ({self.piece}) will take an extra turn."
         )
-        a.swap_positions(b, game, lines)
 
     def _spell_lead_back_5(self, game, lines):
         """Spell 5: the (single) lead racer moves backwards 5. Ties broken

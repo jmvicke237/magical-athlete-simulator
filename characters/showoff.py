@@ -7,7 +7,7 @@ class ShowOff(Character):
     amount to my move. If I ever roll the same or lower, I don't move.
 
     Simulator policy: ShowOff chooses when to stop pressing their luck
-    using the game.showoff_threshold knob (default 8). They keep rolling
+    using the game.showoff_threshold knob (default 5). They keep rolling
     while the running total is below the threshold, and stop once they meet
     or exceed it. Higher threshold = greedier = more bust risk. Bust here
     means "no movement this turn" — there's no trip carry-over to next turn.
@@ -21,7 +21,7 @@ class ShowOff(Character):
         if game.is_power_suppressed_for(self):
             return Character.main_roll(self, game, play_by_play_lines)
 
-        threshold = getattr(game, 'showoff_threshold', 8)
+        threshold = getattr(game, 'showoff_threshold', 5)
         last_roll = None
         total = 0
         first_log = True

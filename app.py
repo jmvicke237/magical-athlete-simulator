@@ -136,7 +136,7 @@ with tab_race:
                 "Stop-at",
                 min_value=2,
                 max_value=12,
-                value=8,
+                value=5,
                 step=1,
                 help="ShowOff keeps re-rolling until total ≥ this. Higher = greedier — more chances to bust on a same-or-lower roll (no movement that turn).",
             )
@@ -169,32 +169,6 @@ with tab_race:
                      "racer must have over Spoilsport before they cancel the "
                      "race. Raise to make Spoilsport more patient, lower to "
                      "make them quicker to rage-quit. Printed card is 3.",
-            )
-
-            st.divider()
-            st.markdown("**Penguin**")
-            penguin_recovery_move = st.slider(
-                "Recovery move",
-                min_value=0,
-                max_value=12,
-                value=6,
-                step=1,
-                help="Spaces a tripped Penguin auto-moves on their recovery "
-                     "turn (instead of skipping the main move). 0 = off "
-                     "(behaves like a normal racer — skips main move when "
-                     "tripped). Bypasses the roll pipeline, so Gunk/Coach/etc. "
-                     "don't modify it. Only applies to Penguin's default "
-                     "(trip-on-pass) mode; alt mode ignores this and doubles "
-                     "the roll instead.",
-            )
-            penguin_alt_mode = st.checkbox(
-                "Alt mode (share-space + doubled-roll recovery)",
-                value=True,
-                help="Switches Penguin's rule set. OFF (default): trip when "
-                     "passed, recover via the slider above. ON: trip when "
-                     "stopping on a racer or when a racer stops on you, "
-                     "recover by moving DOUBLE your roll (slider above is "
-                     "ignored).",
             )
 
             st.divider()
@@ -307,9 +281,7 @@ with tab_race:
                 random_starting_bronze=random_starting_bronze,
                 antimag_main_move_penalty=int(antimag_main_move_penalty),
                 spoilsport_threshold=int(spoilsport_threshold),
-                penguin_recovery_move=int(penguin_recovery_move),
                 nemesis_warp_range=int(nemesis_warp_range),
-                penguin_alt_mode=penguin_alt_mode,
                 random_board_pool=random_board_pool,
                 cheatah_alt_mode=cheatah_alt_mode,
             )
