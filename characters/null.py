@@ -1,8 +1,8 @@
-# antimagicalathlete.py
+# null.py
 
 from .base_character import Character
 
-class AntimagicalAthlete(Character):
+class Null(Character):
     """Racers ahead of me have no powers AND -1 to their main move.
 
     Suppression is dynamic — checked fresh at each power-firing call site,
@@ -19,11 +19,11 @@ class AntimagicalAthlete(Character):
       - NormalHarry's mid-pass elimination loop
       - Mole's _maybe_warp
 
-    Main-move penalty: Game.get_antimag_main_move_penalty subtracts N spaces
+    Main-move penalty: Game.get_null_main_move_penalty subtracts N spaces
     (default 1, the canonical rule) from the main-move of any racer ahead
-    of Antimag. Applied in base.take_turn after the multiplier, clamped to
+    of Null. Applied in base.take_turn after the multiplier, clamped to
     0 (so a small roll just becomes a no-move, not backwards motion). The
-    simulator's antimag_main_move_penalty toggle lets you tune this to a
+    simulator's null_main_move_penalty toggle lets you tune this to a
     stronger value (-2, -3, …) for balance experiments; 0 disables it
     entirely if you ever want to test pure power-suppression behavior.
 

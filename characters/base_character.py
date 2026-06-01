@@ -75,7 +75,7 @@ class Character:
 
             # Handle rerolls (Magician, Dicemonger)
             # Note: Rerolls happen before triggers, so we handle them specially.
-            # AntimagicalAthlete suppresses the rerollr's power if they're ahead.
+            # Null suppresses the rerollr's power if they're ahead.
             for player_index in game.turn_order:
                 other_player = game.players[player_index]
                 if hasattr(other_player, "reroll_main_roll"):
@@ -104,17 +104,17 @@ class Character:
                     )
                     roll = new_roll
 
-                # AntimagicalAthlete buff toggle: racers strictly ahead of an
-                # active Antimag also lose N from their main-move spaces.
+                # Null buff toggle: racers strictly ahead of an
+                # active Null also lose N from their main-move spaces.
                 # Applied after the multiplier so it lands on the final value
                 # the racer is about to move; clamp at 0 so a small roll just
                 # becomes a no-move rather than backwards motion.
-                antimag_penalty = game.get_antimag_main_move_penalty(self)
-                if antimag_penalty > 0:
-                    new_roll = max(0, roll - antimag_penalty)
+                null_penalty = game.get_null_main_move_penalty(self)
+                if null_penalty > 0:
+                    new_roll = max(0, roll - null_penalty)
                     if new_roll != roll:
                         play_by_play_lines.append(
-                            f"  {self.name} ({self.piece}) is ahead of AntimagicalAthlete: -{antimag_penalty} main move ({roll} -> {new_roll})"
+                            f"  {self.name} ({self.piece}) is ahead of Null: -{null_penalty} main move ({roll} -> {new_roll})"
                         )
                     roll = new_roll
 
@@ -155,7 +155,7 @@ class Character:
                 game.resolve_phase(PowerPhase.POST_MOVEMENT, self, play_by_play_lines)
 
         # Execute post-move ability (for backwards compatibility with characters that use this).
-        # AntimagicalAthlete suppresses post_move_ability when self is ahead of Antimag.
+        # Null suppresses post_move_ability when self is ahead of Null.
         if not game.is_power_suppressed_for(self):
             self.post_move_ability(game, play_by_play_lines)
 
@@ -288,8 +288,8 @@ class Character:
                 current_space = game.board.spaces[self.position]
                 current_space.on_enter(self, game, play_by_play_lines)
 
-            # Detect and notify passed racers (AntimagicalAthlete: passed
-            # racers ahead of Antimag have no powers, so on_being_passed skips)
+            # Detect and notify passed racers (Null: passed
+            # racers ahead of Null have no powers, so on_being_passed skips)
             passed_racers = self.detect_passes(game, move_start, move_end)
             for passed_racer in passed_racers:
                 if not game.is_power_suppressed_for(passed_racer):
@@ -397,7 +397,7 @@ class Character:
                 current_space = game.board.spaces[self.position]
                 current_space.on_enter(self, game, play_by_play_lines)
 
-            # Notify other players about the jump (AntimagicalAthlete suppresses)
+            # Notify other players about the jump (Null suppresses)
             for other_player in game.players:
                 if other_player != self:
                     if not game.is_power_suppressed_for(other_player):

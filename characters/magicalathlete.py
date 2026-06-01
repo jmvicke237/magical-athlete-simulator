@@ -38,7 +38,7 @@ class MagicalAthlete(Character):
 
     Edge cases:
       - If MA is tripped, defer to base (skip main move = skip the spell).
-      - If MA is ahead of an active Antimag, defer to base for a vanilla
+      - If MA is ahead of an active Null, defer to base for a vanilla
         d6 main move. MA's whole movement is their power, so suppression
         nukes the spell dispatch and they fall back to plain movement.
       - If Inchworm interrupts a 1-roll (sets skip_main_move), the spell

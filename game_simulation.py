@@ -7,14 +7,14 @@ from power_system import PowerPhase
 from debug_utils import TurnEventCapExceeded
 
 class Game:
-    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, speeddemon_threshold=4, speeddemon_starting_points=3, speeddemon_check_timing="start", showoff_threshold=5, random_starting_bronze=True, antimag_main_move_penalty=1, spoilsport_threshold=5, nemesis_warp_range=5, random_board_pool=None, cheatah_alt_mode=True, forced_twist=None):
+    def __init__(self, character_names, board_type=DEFAULT_BOARD_TYPE, board=None, random_turn_order=False, speeddemon_threshold=4, speeddemon_starting_points=3, speeddemon_check_timing="start", showoff_threshold=5, random_starting_bronze=True, null_main_move_penalty=1, spoilsport_threshold=5, nemesis_warp_range=5, random_board_pool=None, cheatah_alt_mode=True, forced_twist=None):
         self.players = []
         self.speeddemon_threshold = speeddemon_threshold  # Lead size that triggers SpeedDemon self-elimination (strict > comparison)
         self.speeddemon_check_timing = speeddemon_check_timing  # "start" or "end" — when the elimination check fires
         self._speeddemon_starting_points = speeddemon_starting_points  # Granted as bronze chips after player creation
         self.showoff_threshold = showoff_threshold  # ShowOff stops rolling once total >= this
         self._random_starting_bronze = random_starting_bronze  # Each racer gets random 0-5 starting bronze chips
-        self._antimag_main_move_penalty = max(0, int(antimag_main_move_penalty))  # Subtracted from the main-move spaces of any racer strictly ahead of an active AntimagicalAthlete. Canonical rule is 1 (the -1 is part of Antimag's power); 0 disables it entirely for testing.
+        self._null_main_move_penalty = max(0, int(null_main_move_penalty))  # Subtracted from the main-move spaces of any racer strictly ahead of an active Null. Canonical rule is 1 (the -1 is part of Null's power); 0 disables it entirely for testing.
         self.spoilsport_threshold = max(1, int(spoilsport_threshold))  # Minimum lead (in spaces) every other racer must have over Spoilsport before they cancel the race.
         self.nemesis_warp_range = max(0, int(nemesis_warp_range))  # Max distance (inclusive) between Nemesis and their picked target that lets the pre-move warp fire; 0 disables the warp.
         self.cheatah_alt_mode = bool(cheatah_alt_mode)  # When True (default), both Cheatah and the guesser pick from 4-6 only (1-in-3 hit rate, higher movement floor). When False, both pick from 1-6 (1-in-6 hit rate, full range).
@@ -59,11 +59,11 @@ class Game:
 
         # Twists board state. `twist_triggered` flips True the first time a
         # racer crosses past space 13 on a Twists board, at which point a
-        # twist is drawn and applied. `twists_drawn` is an ordered list (more
-        # than one entry if Fans Demand Chaos chained). `twist_state` is a
-        # bag of per-twist persistent data — keys consumed by hooks below
-        # (conveyor_bonus, no_running_active, curse_wands_active, fixed_rolls,
-        # ghost_mouth, season_finale_active, bonkbug_active).
+        # twist is drawn and applied. `twists_drawn` is the list of drawn
+        # twists (typically one entry). `twist_state` is a bag of per-twist
+        # persistent data — keys consumed by hooks below (conveyor_bonus,
+        # no_running_active, curse_wands_active, fixed_rolls, ghost_mouth,
+        # season_finale_active, bonkbug_active).
         self.twist_triggered = False
         self.twists_drawn = []
         self.twist_state = {}
@@ -236,8 +236,8 @@ class Game:
                 )
                 self.finish_player(survivor, play_by_play_lines)
 
-        # End-of-race hooks (e.g., Gloth's no-corner bonus). Antimag
-        # suppression applies — racers ahead of Antimag don't get end-of-race powers.
+        # End-of-race hooks (e.g., Gloth's no-corner bonus). Null
+        # suppression applies — racers ahead of Null don't get end-of-race powers.
         for player in self.players:
             if not self.is_power_suppressed_for(player):
                 player.on_race_end(self, play_by_play_lines)
@@ -260,12 +260,12 @@ class Game:
         return turns, final_placements
 
     def is_power_suppressed_for(self, character):
-        """True if any active AntimagicalAthlete is in the game and the given
-        character is strictly ahead of them. AntimagicalAthlete's spec:
+        """True if any active Null is in the game and the given
+        character is strictly ahead of them. Null's spec:
         "Racers ahead of me have no powers." Position is checked dynamically
         at each call site so suppression updates immediately as racers move."""
         for p in self.players:
-            if (p.piece == "AntimagicalAthlete"
+            if (p.piece == "Null"
                     and p is not character
                     and not p.finished
                     and p not in self.eliminated_players
@@ -273,18 +273,18 @@ class Game:
                 return True
         return False
 
-    def get_antimag_main_move_penalty(self, character):
+    def get_null_main_move_penalty(self, character):
         """Magnitude (>=0) to subtract from the given character's main-move
-        spaces when they are strictly ahead of any active AntimagicalAthlete.
-        Canonical penalty is 1 — part of Antimag's power along with power
+        spaces when they are strictly ahead of any active Null.
+        Canonical penalty is 1 — part of Null's power along with power
         suppression. Returns 0 if the penalty is disabled (toggle set to 0),
-        no Antimag is active, or the character isn't ahead. Reuses
+        no Null is active, or the character isn't ahead. Reuses
         is_power_suppressed_for for the position check so the penalty
         stays in lockstep with power suppression."""
-        if self._antimag_main_move_penalty <= 0:
+        if self._null_main_move_penalty <= 0:
             return 0
         if self.is_power_suppressed_for(character):
-            return self._antimag_main_move_penalty
+            return self._null_main_move_penalty
         return 0
 
     def _take_turn_or_stun(self, player, play_by_play_lines):
@@ -398,6 +398,66 @@ class Game:
             draw_and_apply_twist(self, triggerer, play_by_play_lines)
         play_by_play_lines.append("")  # blank line for readability
 
+    def _doppelgangster_steal_power(self, doppelgangster, target, play_by_play_lines):
+        """Swap Doppelgangster's Python class to the target's class, preserving
+        race state (position, chips, finished/eliminated/tripped flags, etc.).
+        The transformed Doppelgangster keeps their "Doppelgangster" piece name
+        but immediately uses the target class's POWER_PHASES and methods.
+
+        Implementation: snapshot the base-state attrs, swap __class__, re-run
+        the target class's __init__ (to set up class-specific instance state
+        like NormalHarry.is_transformed or Nemesis.has_picked_nemesis), then
+        restore the snapshot. The __init__ call also resets base state (name,
+        piece, position, chips, etc.); the snapshot restore puts those back."""
+        target_class = type(target)
+        from characters.doppelgangster import Doppelgangster as _Dop
+        if target_class is _Dop or target_class is Character:
+            return  # no power worth stealing
+
+        preserved = {
+            'position': doppelgangster.position,
+            'previous_position': doppelgangster.previous_position,
+            'finished': False,
+            'eliminated': False,
+            'tripped': doppelgangster.tripped,
+            'turn_start_position': doppelgangster.turn_start_position,
+            'last_roll': doppelgangster.last_roll,
+            'skip_main_move': doppelgangster.skip_main_move,
+            'main_move_multiplier': doppelgangster.main_move_multiplier,
+            'ability_activations': doppelgangster.ability_activations,
+            'gold_chips': doppelgangster.gold_chips,
+            'silver_chips': doppelgangster.silver_chips,
+            'bronze_chips': doppelgangster.bronze_chips,
+        }
+        if hasattr(doppelgangster, 'player_number'):
+            preserved['player_number'] = doppelgangster.player_number
+        name = doppelgangster.name
+        piece = doppelgangster.piece  # stays "Doppelgangster"
+
+        doppelgangster.__class__ = target_class
+        try:
+            target_class.__init__(doppelgangster, name, piece)
+        except Exception as exc:
+            play_by_play_lines.append(
+                f"  Doppelgangster power transfer init error ({exc!r}) — proceeding anyway."
+            )
+
+        for k, v in preserved.items():
+            setattr(doppelgangster, k, v)
+
+        play_by_play_lines.append(
+            f"  Doppelgangster now wields the power of {target_class.__name__}."
+        )
+        # Credit Doppelgangster with the intercept itself as an ability use.
+        # Post-swap, the stolen class's own register_ability_use calls will
+        # also increment this same counter (since they fire on the
+        # Doppelgangster instance), keeping all activity attributed to
+        # "Doppelgangster" in the stats.
+        doppelgangster.register_ability_use(
+            self, play_by_play_lines,
+            description=f"Doppelgangster (stole {target_class.__name__})"
+        )
+
     def _active_stunners_near(self, player):
         """Return the list of active (non-suppressed) Stunners within 1 space
         of `player`. Empty list if none. Used by roll_die for the override
@@ -475,6 +535,33 @@ class Game:
                 
     def finish_player(self, player, play_by_play_lines):
         if not player.finished:
+            # Doppelgangster intercept: when the FIRST racer crosses the finish
+            # line, if there's an active *untransformed* Doppelgangster (not
+            # the finisher), the finisher is eliminated and Doppelgangster
+            # steals their class. We use `isinstance(p, Doppelgangster)`
+            # rather than the piece-name check so a Doppelgangster whose
+            # class has already been swapped (one-shot ability) doesn't
+            # re-intercept. Skipped during Season Finale.
+            from characters.doppelgangster import Doppelgangster as _Dop
+            if (len(self.finished_players) == 0
+                    and not isinstance(player, _Dop)
+                    and not self.twist_state.get('season_finale_active')):
+                dop = next(
+                    (p for p in self.players
+                     if isinstance(p, _Dop)
+                     and not p.finished
+                     and p not in self.eliminated_players),
+                    None,
+                )
+                if dop is not None:
+                    play_by_play_lines.append(
+                        f"!! Doppelgangster intercepts! {player.name} ({player.piece}) "
+                        f"would have finished 1st — eliminated instead, power stolen."
+                    )
+                    self.eliminate_player(player, play_by_play_lines)
+                    self._doppelgangster_steal_power(dop, player, play_by_play_lines)
+                    return
+
             player.finished = True
             self.finished_players.append(player)
 
@@ -631,7 +718,7 @@ class Game:
         Returns:
             Result of the action (typically None or a modified roll value)
         """
-        # AntimagicalAthlete: racers ahead of Antimag have no powers.
+        # Null: racers ahead of Null have no powers.
         # MOVEMENT is special — it's the core mechanic, not a "power" per se,
         # so we always allow it. Other phases skip when suppressed.
         if phase != PowerPhase.MOVEMENT and self.is_power_suppressed_for(power_owner):
@@ -744,7 +831,7 @@ def _run_single_simulation(character_names, board_type=DEFAULT_BOARD_TYPE, rando
     play_by_play_lines.insert(0, f"Board: {game.board.get_display_name()}")
     return turns, final_placements, play_by_play_lines, game.board.board_type
 
-def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, speeddemon_threshold=4, speeddemon_starting_points=3, speeddemon_check_timing="start", showoff_threshold=5, random_starting_bronze=True, antimag_main_move_penalty=1, spoilsport_threshold=5, nemesis_warp_range=5, random_board_pool=None, cheatah_alt_mode=True, forced_twist=None):
+def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE, fixed_characters=None, random_turn_order=False, collect_detailed_logs=False, allowed_characters=None, speeddemon_threshold=4, speeddemon_starting_points=3, speeddemon_check_timing="start", showoff_threshold=5, random_starting_bronze=True, null_main_move_penalty=1, spoilsport_threshold=5, nemesis_warp_range=5, random_board_pool=None, cheatah_alt_mode=True, forced_twist=None):
     """Run multiple simulations and return statistics with proper ability tracking.
 
     Args:
@@ -781,7 +868,7 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
             # Run the simulation with the specified board type.
             # Per-race log lines are capped to keep memory bounded with V1+V2
             # reactive cascades (Mole+Romantic fan-out + bonus turns).
-            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, speeddemon_threshold=speeddemon_threshold, speeddemon_starting_points=speeddemon_starting_points, speeddemon_check_timing=speeddemon_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, nemesis_warp_range=nemesis_warp_range, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode, forced_twist=forced_twist)
+            game = Game(selected_characters, board_type=board_type, random_turn_order=random_turn_order, speeddemon_threshold=speeddemon_threshold, speeddemon_starting_points=speeddemon_starting_points, speeddemon_check_timing=speeddemon_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, null_main_move_penalty=null_main_move_penalty, spoilsport_threshold=spoilsport_threshold, nemesis_warp_range=nemesis_warp_range, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode, forced_twist=forced_twist)
             play_by_play_lines = _CappedLogList(cap=5000) if collect_detailed_logs else _CappedLogList(cap=500)
             turns, final_placements = game.run(play_by_play_lines)
             

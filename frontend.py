@@ -240,11 +240,11 @@ class MagicalAthleteApp:
         self.random_starting_bronze_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(left_frame, text="Random starting bronze (0-5 each racer)", variable=self.random_starting_bronze_var).grid(row=10, column=0, columnspan=2, padx=5, pady=5, sticky="w")
 
-        # AntimagicalAthlete buff: spaces subtracted from main-move of any
-        # racer ahead of an active Antimag. 0 = off (power suppression only).
-        ttk.Label(left_frame, text="Antimag main-move penalty:").grid(row=11, column=0, padx=5, pady=5, sticky="w")
-        self.antimag_main_move_penalty_var = tk.IntVar(value=1)
-        ttk.Spinbox(left_frame, from_=0, to=6, textvariable=self.antimag_main_move_penalty_var, width=5).grid(row=11, column=1, padx=5, pady=5, sticky="w")
+        # Null buff: spaces subtracted from main-move of any
+        # racer ahead of an active Null. 0 = off (power suppression only).
+        ttk.Label(left_frame, text="Null main-move penalty:").grid(row=11, column=0, padx=5, pady=5, sticky="w")
+        self.null_main_move_penalty_var = tk.IntVar(value=1)
+        ttk.Spinbox(left_frame, from_=0, to=6, textvariable=self.null_main_move_penalty_var, width=5).grid(row=11, column=1, padx=5, pady=5, sticky="w")
 
         # Spoilsport cancel threshold: minimum lead (in spaces) every other
         # racer must have over Spoilsport before the race is cancelled.
@@ -603,7 +603,7 @@ class MagicalAthleteApp:
         speeddemon_check_timing = self.speeddemon_check_timing_var.get()
         showoff_threshold = self.showoff_threshold_var.get()
         random_starting_bronze = self.random_starting_bronze_var.get()
-        antimag_main_move_penalty = self.antimag_main_move_penalty_var.get()
+        null_main_move_penalty = self.null_main_move_penalty_var.get()
         spoilsport_threshold = self.spoilsport_threshold_var.get()
         nemesis_warp_range = self.nemesis_warp_range_var.get()
         cheatah_alt_mode = self.cheatah_alt_mode_var.get()
@@ -636,7 +636,7 @@ class MagicalAthleteApp:
                 # Updated to handle the additional returns including chip statistics and board type counts
                 # collect_detailed_logs=True because frontend has an export logs feature
                 average_turns, average_finish_positions, all_play_by_play, ability_activations, appearance_count, chip_stats, board_type_counts, win_counts, turns_by_board = run_simulations(
-                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, speeddemon_threshold=speeddemon_threshold, speeddemon_starting_points=speeddemon_starting_points, speeddemon_check_timing=speeddemon_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, antimag_main_move_penalty=antimag_main_move_penalty, spoilsport_threshold=spoilsport_threshold, nemesis_warp_range=nemesis_warp_range, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode, forced_twist=forced_twist
+                    num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, speeddemon_threshold=speeddemon_threshold, speeddemon_starting_points=speeddemon_starting_points, speeddemon_check_timing=speeddemon_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, null_main_move_penalty=null_main_move_penalty, spoilsport_threshold=spoilsport_threshold, nemesis_warp_range=nemesis_warp_range, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode, forced_twist=forced_twist
                 )
 
                 # Display results with ability data included

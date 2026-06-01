@@ -12,12 +12,12 @@ class Stunner(Character):
 
     Implementation: Game.roll_die() consults Game.is_near_stunner(player)
     on every die roll; if the rolling player is within 1 space of an
-    active (non-Antimag-suppressed) Stunner, it returns 1 regardless of
+    active (non-Null-suppressed) Stunner, it returns 1 regardless of
     the underlying range. Per-character special rolls funnel through
     game.roll_die instead of bare random.randint to make the override
     universal.
 
-    Antimag interaction: a Stunner strictly ahead of Antimag has their
+    Null interaction: a Stunner strictly ahead of Null has their
     power suppressed (is_power_suppressed_for(Stunner) == True), and
     is_near_stunner ignores suppressed Stunners — so racers adjacent to
     a suppressed Stunner roll normally.

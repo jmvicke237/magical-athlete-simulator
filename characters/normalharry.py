@@ -54,7 +54,7 @@ class NormalHarry(Character):
             return  # blocked (Stickler) or no-op
 
         for player, original_pos in candidates:
-            # AntimagicalAthlete: if NormalHarry's pass put us ahead of Antimag,
+            # Null: if NormalHarry's pass put us ahead of Null,
             # NormalHarry's powers are suppressed mid-pass, so no eliminations.
             if game.is_power_suppressed_for(self):
                 break

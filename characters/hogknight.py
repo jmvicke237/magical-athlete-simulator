@@ -6,9 +6,9 @@ from power_system import PowerPhase
 
 class HogKnight(Character):
     """I start the race on a hog. The hog gives its rider +2 to their main move.
-    When a racer stops on the hog's space (or the hog stops on theirs), they
-    take the hog. If the hog stops on multiple racers, the next in turn order
-    after the previous rider steals it."""
+    When a racer stops on the hog's space, they take the hog. The hog moves
+    with its current rider; landing the hog on another racer does NOT transfer
+    it (only the racer landing on the hog does)."""
 
     POWER_PHASES = {PowerPhase.ROLL_MODIFICATION}
     EDITION = "v2"
@@ -78,22 +78,12 @@ class HogKnight(Character):
         rider = state['rider']
 
         if moved_player is rider:
-            # Rider moved → hog moves with them. Check if any other racers are
-            # at the new space.
+            # Rider moved → hog moves with them. No transfer fires when the
+            # rider lands on another racer (per rule: only landing-on-hog
+            # transfers, not hog-landing-on-someone).
             state['position'] = rider.position
-            candidates = [
-                p for p in game.players
-                if p is not rider
-                and not p.finished
-                and p not in game.eliminated_players
-                and p.position == rider.position
-            ]
-            if candidates:
-                new_rider = self._pick_next_in_turn_order(game, rider, candidates)
-                if new_rider is not None:
-                    self._transfer_hog(state, new_rider, play_by_play_lines, game)
         else:
-            # Non-rider moved. Did they land on the hog's space?
+            # Non-rider moved. If they landed on the hog's space, they take it.
             if moved_player.position == state['position']:
                 self._transfer_hog(state, moved_player, play_by_play_lines, game)
 
@@ -108,19 +98,3 @@ class HogKnight(Character):
         state['rider'] = new_rider
         state['position'] = new_rider.position
         self.register_ability_use(game, play_by_play_lines, description="HogKnight (hog transferred)")
-
-    def _pick_next_in_turn_order(self, game, current_rider, candidates):
-        """Return the candidate that comes first in turn order starting from
-        the position after the current rider."""
-        try:
-            rider_player_idx = game.players.index(current_rider)
-            rider_order_pos = game.turn_order.index(rider_player_idx)
-        except ValueError:
-            return candidates[0] if candidates else None
-        n = len(game.turn_order)
-        for offset in range(1, n + 1):
-            check_idx = (rider_order_pos + offset) % n
-            candidate = game.players[game.turn_order[check_idx]]
-            if candidate in candidates:
-                return candidate
-        return None

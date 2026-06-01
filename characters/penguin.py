@@ -10,16 +10,16 @@ class Penguin(Character):
 
     Two-phase mechanic:
       - Trigger: on_being_passed sets self.tripped = True. Trip flag is
-        gated by Antimag suppression so racers ahead of Antimag don't
+        gated by Null suppression so racers ahead of Null don't
         proc Penguin's trip.
       - Recovery: take_turn override clears the trip BEFORE base sees it
         (so base.take_turn doesn't set skip_main_move) and stashes a flag
         for pre_move_action. The pre_move_action (PRE_ROLL phase) reads
         the flag and bumps main_move_multiplier *= 2 — the rest of the
-        roll pipeline (ROLL_MODIFICATION, Antimag penalty, etc.) still
+        roll pipeline (ROLL_MODIFICATION, Null penalty, etc.) still
         applies on top of the doubled value.
 
-    Antimag interaction: if Penguin is strictly ahead of an active Antimag,
+    Null interaction: if Penguin is strictly ahead of an active Null,
     powers are suppressed. on_being_passed is gated by suppression. The
     take_turn override defers to base behavior (normal skip-main-move)
     when suppressed, so Penguin can't free-recover out of suppression.

@@ -16,8 +16,8 @@ class Kraken(Character):
 
     Finished and eliminated racers are not affected.
 
-    Antimag interaction: pre_move_action is suppressed by the standard
-    is_power_suppressed_for gate when Kraken is ahead of an active Antimag,
+    Null interaction: pre_move_action is suppressed by the standard
+    is_power_suppressed_for gate when Kraken is ahead of an active Null,
     so the warp doesn't fire (and the once-per-race usage isn't burned).
     """
 

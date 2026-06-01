@@ -177,17 +177,17 @@ with tab_race:
             )
 
             st.divider()
-            st.markdown("**AntimagicalAthlete**")
-            antimag_main_move_penalty = st.number_input(
+            st.markdown("**Null**")
+            null_main_move_penalty = st.number_input(
                 "Main-move penalty",
                 min_value=0,
                 max_value=6,
                 value=1,
                 step=1,
                 help="Spaces subtracted from the main-move of any racer "
-                     "strictly ahead of an active AntimagicalAthlete. "
+                     "strictly ahead of an active Null. "
                      "Default 1 is the canonical rule (racers ahead of "
-                     "Antimag lose their powers AND get -1 to their main "
+                     "Null lose their powers AND get -1 to their main "
                      "move). Crank to 2+ for balance experiments; 0 disables "
                      "the penalty entirely (suppression only).",
             )
@@ -317,7 +317,7 @@ with tab_race:
                 speeddemon_check_timing=speeddemon_check_timing,
                 showoff_threshold=int(showoff_threshold),
                 random_starting_bronze=random_starting_bronze,
-                antimag_main_move_penalty=int(antimag_main_move_penalty),
+                null_main_move_penalty=int(null_main_move_penalty),
                 spoilsport_threshold=int(spoilsport_threshold),
                 nemesis_warp_range=int(nemesis_warp_range),
                 random_board_pool=random_board_pool,

@@ -57,7 +57,7 @@ from characters.thehose import TheHose
 from characters.mole import Mole
 from characters.stunner import Stunner
 from characters.stepdad import Stepdad
-from characters.antimagicalathlete import AntimagicalAthlete
+from characters.null import Null
 from characters.hopfrog import Hopfrog
 from characters.gloth import Gloth
 from characters.soulmate import Soulmate
@@ -70,6 +70,8 @@ from characters.hotel import Hotel
 from characters.penguin import Penguin
 from characters.nemesis import Nemesis
 from characters.magicalathlete import MagicalAthlete
+from characters.icarus import Icarus
+from characters.doppelgangster import Doppelgangster
 
 character_abilities = {
     "HugeBaby": HugeBaby,
@@ -124,7 +126,7 @@ character_abilities = {
     "Mole": Mole,
     "Stunner": Stunner,
     "Stepdad": Stepdad,
-    "AntimagicalAthlete": AntimagicalAthlete,
+    "Null": Null,
     "Hopfrog": Hopfrog,
     "Gloth": Gloth,
     "Soulmate": Soulmate,
@@ -137,6 +139,8 @@ character_abilities = {
     "Penguin": Penguin,
     "Nemesis": Nemesis,
     "MagicalAthlete": MagicalAthlete,
+    "Icarus": Icarus,
+    "Doppelgangster": Doppelgangster,
 }
 
 # Edition options for the frontend toggle. Each character class declares its

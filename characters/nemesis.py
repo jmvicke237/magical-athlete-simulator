@@ -24,8 +24,8 @@ class Nemesis(Character):
       - If we're already sharing nemesis's space, no warp (no-op).
       - If Nemesis is alone (e.g. a 1-racer setup somehow), pick is skipped.
 
-    Antimag interaction: pre_move_action is suppressed by the standard
-    is_power_suppressed_for gate when Nemesis is ahead of an active Antimag,
+    Null interaction: pre_move_action is suppressed by the standard
+    is_power_suppressed_for gate when Nemesis is ahead of an active Null,
     so the warp doesn't fire. The race-start pick happens before any
     movement, so suppression isn't a factor there.
     """

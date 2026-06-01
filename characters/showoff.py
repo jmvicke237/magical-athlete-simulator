@@ -17,7 +17,7 @@ class ShowOff(Character):
     EDITION = "v2"
 
     def main_roll(self, game, play_by_play_lines):
-        # Antimag: ShowOff's override is a power. Fall back to base d6 if suppressed.
+        # Null: ShowOff's override is a power. Fall back to base d6 if suppressed.
         if game.is_power_suppressed_for(self):
             return Character.main_roll(self, game, play_by_play_lines)
 

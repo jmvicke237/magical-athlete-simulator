@@ -17,9 +17,9 @@ class Mole(Character):
     always-5. Other phases (DIE_ROLL_TRIGGER, ROLL_MODIFICATION) still
     operate on the returned 6 the same way they would on a normal roll.
 
-    Antimag interaction: Mole's "move 6" is a power, so a Mole strictly
-    ahead of an active AntimagicalAthlete loses it and falls back to
-    base.main_roll (vanilla d6). The Antimag main-move penalty then
+    Null interaction: Mole's "move 6" is a power, so a Mole strictly
+    ahead of an active Null loses it and falls back to
+    base.main_roll (vanilla d6). The Null main-move penalty then
     applies on top in base.take_turn as usual.
 
     Stunner interaction: Stunner-within-1 means there IS a racer within
@@ -33,7 +33,7 @@ class Mole(Character):
     EDITION = "v2"
 
     def main_roll(self, game, play_by_play_lines):
-        # Antimag: Mole's override is a power. Fall back to base d6 if suppressed.
+        # Null: Mole's override is a power. Fall back to base d6 if suppressed.
         if game.is_power_suppressed_for(self):
             return Character.main_roll(self, game, play_by_play_lines)
 
