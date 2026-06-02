@@ -253,6 +253,10 @@ class Game:
         for player in self.players:
             points = (player.gold_chips * 5) + (player.silver_chips * 3) + (player.bronze_chips * 1)
             play_by_play_lines.append(f"{player.name} ({player.piece}): {points} points (Gold: {player.gold_chips}, Silver: {player.silver_chips}, Bronze: {player.bronze_chips})")
+        play_by_play_lines.append(
+            f"Bronze chips earned this race (excluding starting chips): "
+            f"{self.bronze_chips_earned_this_race()}"
+        )
         
         final_placements = self.assign_final_placements()
         for place, placed_player in final_placements:
@@ -778,6 +782,26 @@ class Game:
         """Returns a dictionary with ability activation counts for each character."""
         return {player.piece: getattr(player, 'ability_activations', 0) for player in self.players}
         
+    def bronze_chips_earned_this_race(self):
+        """Total bronze chips earned (or destroyed) across all racers during
+        the race, excluding chips seeded at the start (random_starting_bronze,
+        speeddemon_starting_points). Computed as
+            (sum of current bronze) - (sum of starting bronze)
+        so transfers between racers (Hotel charging a stopper, etc.) net to
+        zero — only chips created from "outside" the racers (ability awards
+        like Streaker/Hare/Sandbag-corner-bonus/Stepdad-win-bonus, board
+        spaces like Wild's bronze_chip spaces or Pinata twist spaces) count.
+
+        Caveat: bronze destroyed mid-race (Sisyphus's roll-6 -1, an extreme
+        edge case in V1) makes this under-count by 1 per loss event. In
+        V2-only races nothing destroys bronze, so the value equals the
+        gross chips_created."""
+        current_total = sum(p.bronze_chips for p in self.players)
+        starting_total = sum(
+            b[2] for b in getattr(self, '_chip_baseline', {}).values()
+        )
+        return current_total - starting_total
+
     def get_chip_statistics(self):
         """Returns chip DELTAs (current - starting) for each character. The
         avg-points metric should reflect points earned during the race, not
@@ -851,6 +875,7 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
         ability_activations = {char: [] for char in character_abilities.keys()}
         appearance_count = {char: 0 for char in character_abilities.keys()}  # Track appearances
         chip_statistics = {char: [] for char in character_abilities.keys()}  # Track chip statistics
+        bronze_earned_per_race = []  # Total bronze chips earned (race-wide) per race; excludes starting chips
         win_counts = {char: 0 for char in character_abilities.keys()}  # Track 1st-place finishes
 
         # Only collect detailed logs if requested (saves memory for Streamlit)
@@ -928,6 +953,10 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
                     if char not in chip_statistics:
                         chip_statistics[char] = []
                     chip_statistics[char].append(stats)
+
+                # Race-wide bronze-chips-earned (excludes starting chips,
+                # ignores transfers — see Game.bronze_chips_earned_this_race).
+                bronze_earned_per_race.append(current_game.bronze_chips_earned_this_race())
             except Exception as e:
                 if collect_detailed_logs:
                     debug_info.append(f"Error getting statistics: {str(e)}")
@@ -1005,7 +1034,11 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
         average_turns_by_board = {
             bt: (sum(t) / len(t)) if t else None for bt, t in turns_by_board.items()
         }
-        return average_turns, average_finish_positions, play_by_play_result, average_ability_activations, appearance_count, average_chip_stats, board_type_counts, win_counts, average_turns_by_board
+        average_bronze_earned = (
+            sum(bronze_earned_per_race) / len(bronze_earned_per_race)
+            if bronze_earned_per_race else 0
+        )
+        return average_turns, average_finish_positions, play_by_play_result, average_ability_activations, appearance_count, average_chip_stats, board_type_counts, win_counts, average_turns_by_board, average_bronze_earned
     finally:
         # Restore stdout
         sys.stdout = original_stdout
