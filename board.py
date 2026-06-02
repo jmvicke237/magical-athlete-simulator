@@ -63,9 +63,14 @@ class Board:
         return f"{self.board_type} Board ({self.length} spaces, corner at {self.corner_position})"
 
 class Space:
-    def __init__(self, space_type, value=0):
+    def __init__(self, space_type, value=0, consumable=False):
         self.space_type = space_type
         self.value = value  # Used for movement spaces
+        # consumable: when True, a bronze_chip space is removed (reverts to
+        # "normal") after a racer picks it up — so only the first racer to
+        # stop there gets the chip. Used by the Pinata twist. Wild-board chip
+        # spaces leave this False (permanent, re-pickup-able).
+        self.consumable = consumable
 
     def on_enter(self, player, game, play_by_play_lines):
         """Handle special effects when a player lands on this space"""
@@ -87,6 +92,11 @@ class Space:
             elif self.space_type == "bronze_chip":
                 player.bronze_chips += 1
                 play_by_play_lines.append(f"{player.name} ({player.piece}) landed on a bronze chip space and received 1 bronze chip!")
+                # Consumable chips (Pinata twist) are taken — the space empties
+                # so later racers stopping here get nothing. Replace this space
+                # object with a plain "normal" one in the board's space list.
+                if self.consumable:
+                    game.board.spaces[player.position] = Space("normal")
             elif self.space_type == "trip":
                 player.tripped = True
                 play_by_play_lines.append(f"{player.name} ({player.piece}) landed on a trip space and will skip their next main move!")

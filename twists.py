@@ -209,15 +209,17 @@ def apply_pinata(game, _triggerer, lines):
     """Put a point chip on every empty space after the first corner
     (FIRST_CORNER_POSITION + 1 through board.length - 1). 'Empty' = the
     current space type is 'normal' (no portals, corners, trips, +/- spaces,
-    etc.). Stopping on a chip space awards 1 bronze; the chip stays (no
-    one-shot tracking — simpler to model as a permanent bronze-chip space)."""
+    etc.). The first racer to stop on a chip space takes it (1 bronze) and
+    the chip is removed — later racers stopping there get nothing. This is
+    handled by the `consumable=True` flag on the placed bronze_chip spaces
+    (see Space.on_enter)."""
     from board import Space
     from characters.nepobaby import FIRST_CORNER_POSITION
     placed = []
     for idx in range(FIRST_CORNER_POSITION + 1, game.board.length):
         space = game.board.spaces[idx]
         if space.space_type == "normal":
-            game.board.spaces[idx] = Space("bronze_chip")
+            game.board.spaces[idx] = Space("bronze_chip", consumable=True)
             placed.append(idx)
     lines.append(
         f"  Pinata leak: bronze chip placed on {len(placed)} empty space(s) "
