@@ -304,6 +304,7 @@ with tab_race:
                 win_counts,
                 average_turns_by_board,
                 average_bronze_earned,
+                max_bronze_earned,
             ) = run_simulations(
                 num_simulations,
                 effective_racer_count,
@@ -344,10 +345,12 @@ with tab_race:
         m8.metric("Sportals races", board_type_counts.get("Sportals", 0))
         m9.metric("Twists races", board_type_counts.get("Twists", 0))
 
-        # Race-economy stat: avg bronze chips entering the chip economy per race
-        # (ability awards + board-space chips; excludes starting chips, transfers
-        # between racers net to zero — see Game.bronze_chips_earned_this_race).
-        st.metric(
+        # Race-economy stat: avg & max bronze chips entering the chip economy
+        # per race (ability awards + board-space chips; excludes starting chips,
+        # transfers between racers net to zero — see
+        # Game.bronze_chips_earned_this_race).
+        bz1, bz2 = st.columns(2)
+        bz1.metric(
             "# of bronze chips used (avg/race)",
             f"{average_bronze_earned:.2f}",
             help="Average bronze chips earned by all racers combined per race. "
@@ -356,6 +359,13 @@ with tab_race:
                  "racers net to zero. Counts things like Streaker's pass-bonus, "
                  "Hare's alone-in-lead chip, board-space bronze chips, and Pinata "
                  "twist chips.",
+        )
+        bz2.metric(
+            "# of bronze chips used (max in a race)",
+            f"{max_bronze_earned}",
+            help="The most bronze chips earned by all racers combined in any "
+                 "single race of this batch. Same inclusion/exclusion rules as "
+                 "the average to the left.",
         )
 
         # ---- Character performance table ---------------------------------

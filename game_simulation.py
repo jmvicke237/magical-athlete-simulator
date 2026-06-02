@@ -1038,7 +1038,8 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
             sum(bronze_earned_per_race) / len(bronze_earned_per_race)
             if bronze_earned_per_race else 0
         )
-        return average_turns, average_finish_positions, play_by_play_result, average_ability_activations, appearance_count, average_chip_stats, board_type_counts, win_counts, average_turns_by_board, average_bronze_earned
+        max_bronze_earned = max(bronze_earned_per_race) if bronze_earned_per_race else 0
+        return average_turns, average_finish_positions, play_by_play_result, average_ability_activations, appearance_count, average_chip_stats, board_type_counts, win_counts, average_turns_by_board, average_bronze_earned, max_bronze_earned
     finally:
         # Restore stdout
         sys.stdout = original_stdout

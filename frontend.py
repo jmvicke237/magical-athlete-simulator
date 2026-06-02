@@ -635,7 +635,7 @@ class MagicalAthleteApp:
             try:
                 # Updated to handle the additional returns including chip statistics and board type counts
                 # collect_detailed_logs=True because frontend has an export logs feature
-                average_turns, average_finish_positions, all_play_by_play, ability_activations, appearance_count, chip_stats, board_type_counts, win_counts, turns_by_board, avg_bronze_earned = run_simulations(
+                average_turns, average_finish_positions, all_play_by_play, ability_activations, appearance_count, chip_stats, board_type_counts, win_counts, turns_by_board, avg_bronze_earned, max_bronze_earned = run_simulations(
                     num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, speeddemon_threshold=speeddemon_threshold, speeddemon_starting_points=speeddemon_starting_points, speeddemon_check_timing=speeddemon_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, null_main_move_penalty=null_main_move_penalty, spoilsport_threshold=spoilsport_threshold, nemesis_warp_range=nemesis_warp_range, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode, forced_twist=forced_twist
                 )
 
@@ -644,7 +644,7 @@ class MagicalAthleteApp:
                     average_turns, average_finish_positions, all_play_by_play,
                     ability_activations, appearance_count, chip_stats,
                     win_counts, edition, num_simulations, turns_by_board,
-                    avg_bronze_earned,
+                    avg_bronze_earned, max_bronze_earned,
                 ))
             except Exception as e:
                 # Fix: Capture the exception message before using it in the lambda
@@ -656,7 +656,8 @@ class MagicalAthleteApp:
     def _display_race_results(self, average_turns, average_finish_positions, all_play_by_play,
                           ability_activations=None, appearance_count=None, chip_stats=None,
                           win_counts=None, edition=None, num_simulations=None,
-                          turns_by_board=None, avg_bronze_earned=None):
+                          turns_by_board=None, avg_bronze_earned=None,
+                          max_bronze_earned=None):
         """Display race simulation results with enhanced ability statistics display."""
         # Store the complete logs for later export
         self.complete_simulation_logs = all_play_by_play.copy() if all_play_by_play else []
@@ -687,6 +688,11 @@ class MagicalAthleteApp:
                 f"# of bronze chips used (avg/race): {avg_bronze_earned:.2f}\n"
                 f"  (Excludes starting chips. Hotel-style transfers between racers net to zero — "
                 f"counts Streaker/Hare/board-space/Pinata-style chip awards.)\n"
+            )
+        if max_bronze_earned is not None:
+            self.race_results_text.insert(
+                tk.END,
+                f"# of bronze chips used (max in a race): {max_bronze_earned}\n"
             )
         self.race_results_text.insert(tk.END, "\n")
         
