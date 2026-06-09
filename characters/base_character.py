@@ -120,8 +120,9 @@ class Character:
 
                 # Twists: Conveyor Belt grants every active racer +N to their
                 # main move for the rest of the race. Stacks on top of all
-                # other modifiers / multipliers / penalties.
-                conveyor_bonus = getattr(game, 'twist_state', {}).get('conveyor_bonus', 0)
+                # other modifiers / multipliers / penalties. Suppressed in the
+                # abilities-off endgame (treated as an ability for that purpose).
+                conveyor_bonus = 0 if getattr(game, 'abilities_disabled', False) else getattr(game, 'twist_state', {}).get('conveyor_bonus', 0)
                 if conveyor_bonus:
                     new_roll = roll + conveyor_bonus
                     play_by_play_lines.append(
@@ -132,8 +133,10 @@ class Character:
                 # Twists: No Running by the scrying pool — final main-move
                 # distance of 6+ eliminates the racer instead of moving them.
                 # Skip the MOVEMENT phase but let the rest of the turn flow
-                # (POST_TURN cleanup, etc.) run naturally.
-                if getattr(game, 'twist_state', {}).get('no_running_active') and roll >= 6:
+                # (POST_TURN cleanup, etc.) run naturally. Disabled once
+                # abilities are off so the endgame can't eliminate racers.
+                if (not getattr(game, 'abilities_disabled', False)
+                        and getattr(game, 'twist_state', {}).get('no_running_active') and roll >= 6):
                     play_by_play_lines.append(
                         f"  {self.name} ({self.piece}) tried to run ({roll}) — "
                         f"caught by the scrying pool and ELIMINATED!"
@@ -190,6 +193,9 @@ class Character:
         the game, force a reroll: PartyPooper moves +1 and registers an ability
         use. Returns True if the caller should reroll. Used by base main_roll
         and any subclass that overrides main_roll (MrDiceGuy)."""
+        # Abilities-off endgame: PartyPooper's reroll is a power — off.
+        if getattr(game, 'abilities_disabled', False):
+            return False
         if self.piece == "PartyPooper":
             return False
         pp = next((p for p in game.players
@@ -237,7 +243,7 @@ class Character:
 
         # Watchdog: bump per-turn event counter and abort if cap exceeded.
         game._turn_event_count = getattr(game, '_turn_event_count', 0) + 1
-        if game._turn_event_count > getattr(game, '_turn_event_cap', 5000):
+        if game._turn_event_count > getattr(game, '_turn_event_cap', 50):
             from debug_utils import TurnEventCapExceeded
             raise TurnEventCapExceeded(f"move event count {game._turn_event_count}")
 
@@ -375,7 +381,7 @@ class Character:
 
         # Watchdog: bump per-turn event counter and abort if cap exceeded.
         game._turn_event_count = getattr(game, '_turn_event_count', 0) + 1
-        if game._turn_event_count > getattr(game, '_turn_event_cap', 5000):
+        if game._turn_event_count > getattr(game, '_turn_event_cap', 50):
             from debug_utils import TurnEventCapExceeded
             raise TurnEventCapExceeded(f"jump event count {game._turn_event_count}")
 
@@ -465,7 +471,7 @@ class Character:
 
         # Watchdog: bump per-turn event counter and abort if cap exceeded.
         game._turn_event_count = getattr(game, '_turn_event_count', 0) + 1
-        if game._turn_event_count > getattr(game, '_turn_event_cap', 5000):
+        if game._turn_event_count > getattr(game, '_turn_event_cap', 50):
             from debug_utils import TurnEventCapExceeded
             raise TurnEventCapExceeded(f"ability event count {game._turn_event_count}")
         

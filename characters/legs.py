@@ -10,6 +10,9 @@ class Legs(Character):
 
     def main_roll(self, game, play_by_play_lines):
         """Legs always rolls a 5 (for their main move)."""
+        # Abilities-off endgame: roll a plain d6 like everyone else.
+        if getattr(game, 'abilities_disabled', False):
+            return Character.main_roll(self, game, play_by_play_lines)
         roll = 5
         play_by_play_lines.append(f"{self.name} ({self.piece}) effectively rolled a 5 (always moves 5).")
         self.last_roll = roll  # Still store the roll for consistency

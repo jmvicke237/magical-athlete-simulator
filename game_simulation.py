@@ -1,6 +1,6 @@
 # game_simulation.py
 import random
-from config import character_abilities, BOARD_LENGTH, MAX_TURNS, CORNER_POSITION, BOARD_TYPES, DEFAULT_BOARD_TYPE
+from config import character_abilities, BOARD_LENGTH, MAX_TURNS, ABILITIES_OFF_TURN, CORNER_POSITION, BOARD_TYPES, DEFAULT_BOARD_TYPE
 from characters.base_character import Character
 from board import Board
 from power_system import PowerPhase
@@ -38,10 +38,20 @@ class Game:
         self.turn_order = []
         self.current_player_index = 0
         self.race_cancelled = False  # Set by Spoilsport (or similar) to end the race
+        # Abilities-off endgame: flipped True by run() once a race reaches
+        # ABILITIES_OFF_TURN. While set, is_power_suppressed_for returns True
+        # for everyone (master switch), Null's main-move penalty is waived,
+        # the per-character roll overrides fall back to a plain d6, and the
+        # ongoing twist effects no-op — so every racer is a plain d6 roller
+        # and the race is guaranteed to finish.
+        self.abilities_disabled = False
         # Watchdog: counts move/jump/ability events per turn. Reset in _take_turn_or_stun.
         # Exceeding the cap raises TurnEventCapExceeded to abort the runaway cascade.
+        # Cap is 50: measured legit turns peak at ~36 events (p99=16), while a
+        # runaway cascade blows past thousands — so 50 cleanly separates the two
+        # and bounds the cost of a pathological turn (was 5000, ~100x slower).
         self._turn_event_count = 0
-        self._turn_event_cap = 5000
+        self._turn_event_cap = 50
         self._current_turn = 0  # Tracked for diagnostic logging
         self._watchdog_diagnostics = []  # Diagnostic strings for any aborted turns this race
         
@@ -176,6 +186,20 @@ class Game:
         while not self.should_game_end(play_by_play_lines) and turns < MAX_TURNS:
             turns += 1
             self._current_turn = turns  # for watchdog diagnostics
+
+            # Abilities-off endgame: a race still going at ABILITIES_OFF_TURN is
+            # almost certainly in a non-terminating loop (e.g., the whole field
+            # jammed next to Stunner). Switch every power off for the rest of
+            # the race so everyone just rolls a plain d6 and someone finishes.
+            if turns >= ABILITIES_OFF_TURN and not self.abilities_disabled:
+                self.abilities_disabled = True
+                msg = (
+                    f"Race reached {turns} turns without finishing — disabling "
+                    f"all abilities; racers now roll a plain d6 until the race completes."
+                )
+                play_by_play_lines.append(f"\n>>> {msg}")
+                self._watchdog_diagnostics.append(msg)
+
             play_by_play_lines.append(f"\nTurn {turns}:")
 
             for _ in range(len(self.players)):
@@ -267,7 +291,14 @@ class Game:
         """True if any active Null is in the game and the given
         character is strictly ahead of them. Null's spec:
         "Racers ahead of me have no powers." Position is checked dynamically
-        at each call site so suppression updates immediately as racers move."""
+        at each call site so suppression updates immediately as racers move.
+
+        Master switch: once abilities_disabled is set (abilities-off endgame),
+        EVERY character's powers are suppressed — this is the single gate that
+        almost all powers, reactions, rerolls, and Stunner's forcing consult,
+        so flipping it turns the whole field into plain d6 rollers."""
+        if self.abilities_disabled:
+            return True
         for p in self.players:
             if (p.piece == "Null"
                     and p is not character
@@ -286,6 +317,11 @@ class Game:
         is_power_suppressed_for for the position check so the penalty
         stays in lockstep with power suppression."""
         if self._null_main_move_penalty <= 0:
+            return 0
+        # Abilities-off endgame: the penalty is part of Null's power, so it's
+        # waived too. (Without this guard the master-switch is_power_suppressed_for
+        # would return True for everyone and wrongly dock every racer -1.)
+        if self.abilities_disabled:
             return 0
         if self.is_power_suppressed_for(character):
             return self._null_main_move_penalty
@@ -323,6 +359,11 @@ class Game:
         """Twists board: ongoing per-turn effects. Called after every
         player's turn (and any queued bonus turns)."""
         if not self.twist_triggered:
+            return
+        # Abilities-off endgame: freeze the disruptive ongoing twists (ghost
+        # WEREMOUTH's eliminations, Curse Wands' turn-skipping) so they can't
+        # perpetuate a non-terminating race.
+        if self.abilities_disabled:
             return
 
         # WEREMOUTH Containment Breach: ghost WEREMOUTH rolls and moves,
@@ -513,10 +554,13 @@ class Game:
         # Twists: Randomness Ceased — this player's roll is locked at their
         # snapshot value for the rest of the race. Clamped to the requested
         # range so unusual callers (e.g., a hypothetical roll_die(low=4, high=6))
-        # still get a value in their expected band.
-        fixed = self.twist_state.get('fixed_rolls', {}).get(id(player))
-        if fixed is not None:
-            return max(low, min(fixed, high))
+        # still get a value in their expected band. Skipped in the abilities-off
+        # endgame: a field all locked at 1 is itself a slow-race cause, so we
+        # want real d6 rolls once abilities are off.
+        if not self.abilities_disabled:
+            fixed = self.twist_state.get('fixed_rolls', {}).get(id(player))
+            if fixed is not None:
+                return max(low, min(fixed, high))
         return random.randint(low, high)
 
     def next_player(self):

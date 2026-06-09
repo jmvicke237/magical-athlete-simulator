@@ -16,6 +16,9 @@ class MrDiceGuy(Character):
     EDITION = "v2"
 
     def main_roll(self, game, play_by_play_lines):
+        # Abilities-off endgame: roll a plain d6 like everyone else.
+        if getattr(game, 'abilities_disabled', False):
+            return Character.main_roll(self, game, play_by_play_lines)
         rolls = [game.roll_die(self, play_by_play_lines) for _ in range(6)]
         play_by_play_lines.append(
             f"{self.name} ({self.piece}) rolls 6 dice: {sorted(rolls, reverse=True)}"

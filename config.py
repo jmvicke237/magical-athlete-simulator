@@ -167,7 +167,22 @@ def get_characters_by_edition(edition):
 
 # Game-wide constants
 BOARD_LENGTH = 30
-MAX_TURNS = 50
+# Hard backstop on total turns. Measured race-length distribution is bimodal:
+# legitimate races finish in <=~38 turns (p99=18), pathological non-terminating
+# combos jump straight to 500+. Nothing legit lands in between. This just needs
+# headroom above ABILITIES_OFF_TURN for the plain-d6 endgame (~10-15 turns) to
+# reach the finish.
+MAX_TURNS = 100
+# When a race reaches this many turns without ending, ALL character powers are
+# switched off for the remainder (everyone becomes a plain d6 roller) so the
+# race is guaranteed to complete. Catches infinite-turn loops that single-turn
+# state-loop detection can't (the state legitimately changes each turn, the
+# race just never reaches the finish). Set to 50 (the old hard cap): it's well
+# above the observed legit max race length (~38), and matching the old cap
+# means a stuck race stops accumulating ability triggers at the same point it
+# used to stop entirely — so abilities-off completion doesn't inflate the
+# Skipper/Stunner ability counts beyond their historical levels.
+ABILITIES_OFF_TURN = 50
 CORNER_POSITION = 15  # Updated to match new board layout
 
 # Board options
