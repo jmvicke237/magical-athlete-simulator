@@ -54,7 +54,11 @@ class Game:
         self._turn_event_cap = 50
         self._current_turn = 0  # Tracked for diagnostic logging
         self._watchdog_diagnostics = []  # Diagnostic strings for any aborted turns this race
-        
+        # Per-race watchdog event tallies (surfaced in the sim summary).
+        self._turn_abort_count = 0   # turns aborted by the per-turn event cap
+        self._hit_max_turns = False  # race reached MAX_TURNS without finishing
+        # abilities_disabled (above) doubles as the "abilities-off fired" flag.
+
         # Recursion tracking for different operations
         self._recursion_depths = {
             'scoocher': 0,
@@ -194,8 +198,9 @@ class Game:
             if turns >= ABILITIES_OFF_TURN and not self.abilities_disabled:
                 self.abilities_disabled = True
                 msg = (
-                    f"Race reached {turns} turns without finishing — disabling "
-                    f"all abilities; racers now roll a plain d6 until the race completes."
+                    f"[WATCHDOG] abilities-off: race reached {turns} turns without "
+                    f"finishing — disabling all abilities; racers now roll a plain "
+                    f"d6 until the race completes."
                 )
                 play_by_play_lines.append(f"\n>>> {msg}")
                 self._watchdog_diagnostics.append(msg)
@@ -239,6 +244,19 @@ class Game:
                 if self.should_game_end(play_by_play_lines):
                     break
                 self.next_player()
+
+        # Detect a true timeout: the loop exited because it hit MAX_TURNS while
+        # the race still hadn't ended. With the abilities-off endgame at
+        # ABILITIES_OFF_TURN this should essentially never happen — it's the
+        # last-resort backstop, flagged so it's visible if it ever does.
+        if turns >= MAX_TURNS and not self.should_game_end(play_by_play_lines):
+            self._hit_max_turns = True
+            msg = (
+                f"[WATCHDOG] max-turns: race hit the {MAX_TURNS}-turn hard cap "
+                f"without finishing — resolving final standings by board position."
+            )
+            play_by_play_lines.append(f"\n>>> {msg}")
+            self._watchdog_diagnostics.append(msg)
 
         # Auto-finish the last surviving racer when the race ended due to
         # elimination (everyone else eaten by NormalHarry/MOUTH/Kraken etc.).
@@ -341,10 +359,11 @@ class Game:
         try:
             player.take_turn(game=self, play_by_play_lines=play_by_play_lines)
         except TurnEventCapExceeded as exc:
+            self._turn_abort_count += 1
             chars = [p.piece for p in self.players]
             positions = [(p.piece, p.position) for p in self.players]
             diag = (
-                f"WATCHDOG: turn {self._current_turn} aborted for "
+                f"[WATCHDOG] turn-abort: turn {self._current_turn} aborted for "
                 f"{player.name} ({player.piece}) — {self._turn_event_count} events "
                 f"(cap {self._turn_event_cap}). chars={chars}, positions={positions}"
             )
@@ -825,7 +844,20 @@ class Game:
     def get_ability_statistics(self):
         """Returns a dictionary with ability activation counts for each character."""
         return {player.piece: getattr(player, 'ability_activations', 0) for player in self.players}
-        
+
+    def get_watchdog_summary(self):
+        """Per-race watchdog event tallies for the sim summary:
+          - turn_aborts:    how many turns the per-turn event cap aborted
+          - abilities_off:  True if the race hit ABILITIES_OFF_TURN (powers
+                            switched off so it could finish)
+          - max_turns_hit:  True if the race hit the MAX_TURNS hard cap
+                            without finishing (resolved by position)"""
+        return {
+            'turn_aborts': getattr(self, '_turn_abort_count', 0),
+            'abilities_off': bool(getattr(self, 'abilities_disabled', False)),
+            'max_turns_hit': bool(getattr(self, '_hit_max_turns', False)),
+        }
+
     def bronze_chips_earned_this_race(self):
         """Total bronze chips earned (or destroyed) across all racers during
         the race, excluding chips seeded at the start (random_starting_bronze,
@@ -921,6 +953,13 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
         chip_statistics = {char: [] for char in character_abilities.keys()}  # Track chip statistics
         bronze_earned_per_race = []  # Total bronze chips earned (race-wide) per race; excludes starting chips
         win_counts = {char: 0 for char in character_abilities.keys()}  # Track 1st-place finishes
+        # Watchdog event tallies across the whole batch (see Game.get_watchdog_summary).
+        watchdog_tally = {
+            'turn_abort_events': 0,    # total turns aborted (sum across races)
+            'races_with_turn_abort': 0,
+            'races_abilities_off': 0,  # races that hit ABILITIES_OFF_TURN
+            'races_max_turns_hit': 0,  # races that hit the MAX_TURNS hard cap
+        }
 
         # Only collect detailed logs if requested (saves memory for Streamlit)
         all_play_by_play = [] if collect_detailed_logs else None
@@ -1001,6 +1040,16 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
                 # Race-wide bronze-chips-earned (excludes starting chips,
                 # ignores transfers — see Game.bronze_chips_earned_this_race).
                 bronze_earned_per_race.append(current_game.bronze_chips_earned_this_race())
+
+                # Watchdog tally for this race.
+                wd = current_game.get_watchdog_summary()
+                if wd['turn_aborts']:
+                    watchdog_tally['turn_abort_events'] += wd['turn_aborts']
+                    watchdog_tally['races_with_turn_abort'] += 1
+                if wd['abilities_off']:
+                    watchdog_tally['races_abilities_off'] += 1
+                if wd['max_turns_hit']:
+                    watchdog_tally['races_max_turns_hit'] += 1
             except Exception as e:
                 if collect_detailed_logs:
                     debug_info.append(f"Error getting statistics: {str(e)}")
@@ -1083,7 +1132,7 @@ def run_simulations(num_simulations, num_players, board_type=DEFAULT_BOARD_TYPE,
             if bronze_earned_per_race else 0
         )
         max_bronze_earned = max(bronze_earned_per_race) if bronze_earned_per_race else 0
-        return average_turns, average_finish_positions, play_by_play_result, average_ability_activations, appearance_count, average_chip_stats, board_type_counts, win_counts, average_turns_by_board, average_bronze_earned, max_bronze_earned
+        return average_turns, average_finish_positions, play_by_play_result, average_ability_activations, appearance_count, average_chip_stats, board_type_counts, win_counts, average_turns_by_board, average_bronze_earned, max_bronze_earned, watchdog_tally
     finally:
         # Restore stdout
         sys.stdout = original_stdout

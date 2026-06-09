@@ -305,6 +305,7 @@ with tab_race:
                 average_turns_by_board,
                 average_bronze_earned,
                 max_bronze_earned,
+                watchdog_tally,
             ) = run_simulations(
                 num_simulations,
                 effective_racer_count,
@@ -367,6 +368,42 @@ with tab_race:
                  "single race of this batch. Same inclusion/exclusion rules as "
                  "the average to the left.",
         )
+
+        # ---- Watchdog / safety-net events --------------------------------
+        wd = watchdog_tally
+        if wd['races_with_turn_abort'] or wd['races_abilities_off'] or wd['races_max_turns_hit']:
+            with st.expander(
+                f"⚠️ Watchdog events fired in this batch "
+                f"({wd['races_abilities_off']} abilities-off, "
+                f"{wd['races_with_turn_abort']} turn-abort, "
+                f"{wd['races_max_turns_hit']} max-turns)",
+                expanded=False,
+            ):
+                w1, w2, w3 = st.columns(3)
+                w1.metric(
+                    "Races: abilities-off endgame",
+                    wd['races_abilities_off'],
+                    help="Races that ran long enough to hit ABILITIES_OFF_TURN — "
+                         "all powers were switched off so plain d6 rolls could "
+                         "finish the race. Search the play-by-play for "
+                         "'[WATCHDOG] abilities-off'.",
+                )
+                w2.metric(
+                    "Races: turn aborted",
+                    wd['races_with_turn_abort'],
+                    help=f"Races where at least one turn hit the per-turn event "
+                         f"cap and was aborted ({wd['turn_abort_events']} aborted "
+                         f"turns total). Search for '[WATCHDOG] turn-abort'.",
+                )
+                w3.metric(
+                    "Races: hit hard turn cap",
+                    wd['races_max_turns_hit'],
+                    help="Races that reached the MAX_TURNS hard cap without "
+                         "finishing (resolved by board position). Should be ~0. "
+                         "Search for '[WATCHDOG] max-turns'.",
+                )
+        else:
+            st.caption("✅ No watchdog events fired — every race finished normally.")
 
         # ---- Character performance table ---------------------------------
         st.subheader("Character Performance")

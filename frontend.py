@@ -635,7 +635,7 @@ class MagicalAthleteApp:
             try:
                 # Updated to handle the additional returns including chip statistics and board type counts
                 # collect_detailed_logs=True because frontend has an export logs feature
-                average_turns, average_finish_positions, all_play_by_play, ability_activations, appearance_count, chip_stats, board_type_counts, win_counts, turns_by_board, avg_bronze_earned, max_bronze_earned = run_simulations(
+                average_turns, average_finish_positions, all_play_by_play, ability_activations, appearance_count, chip_stats, board_type_counts, win_counts, turns_by_board, avg_bronze_earned, max_bronze_earned, watchdog_tally = run_simulations(
                     num_simulations, num_racers, board_type=board_type, fixed_characters=fixed_characters, random_turn_order=True, collect_detailed_logs=True, allowed_characters=allowed, speeddemon_threshold=speeddemon_threshold, speeddemon_starting_points=speeddemon_starting_points, speeddemon_check_timing=speeddemon_check_timing, showoff_threshold=showoff_threshold, random_starting_bronze=random_starting_bronze, null_main_move_penalty=null_main_move_penalty, spoilsport_threshold=spoilsport_threshold, nemesis_warp_range=nemesis_warp_range, random_board_pool=random_board_pool, cheatah_alt_mode=cheatah_alt_mode, forced_twist=forced_twist
                 )
 
@@ -644,7 +644,7 @@ class MagicalAthleteApp:
                     average_turns, average_finish_positions, all_play_by_play,
                     ability_activations, appearance_count, chip_stats,
                     win_counts, edition, num_simulations, turns_by_board,
-                    avg_bronze_earned, max_bronze_earned,
+                    avg_bronze_earned, max_bronze_earned, watchdog_tally,
                 ))
             except Exception as e:
                 # Fix: Capture the exception message before using it in the lambda
@@ -657,7 +657,7 @@ class MagicalAthleteApp:
                           ability_activations=None, appearance_count=None, chip_stats=None,
                           win_counts=None, edition=None, num_simulations=None,
                           turns_by_board=None, avg_bronze_earned=None,
-                          max_bronze_earned=None):
+                          max_bronze_earned=None, watchdog_tally=None):
         """Display race simulation results with enhanced ability statistics display."""
         # Store the complete logs for later export
         self.complete_simulation_logs = all_play_by_play.copy() if all_play_by_play else []
@@ -694,6 +694,23 @@ class MagicalAthleteApp:
                 tk.END,
                 f"# of bronze chips used (max in a race): {max_bronze_earned}\n"
             )
+        if watchdog_tally is not None:
+            wd = watchdog_tally
+            if wd.get('races_with_turn_abort') or wd.get('races_abilities_off') or wd.get('races_max_turns_hit'):
+                self.race_results_text.insert(
+                    tk.END,
+                    "Watchdog events (search play-by-play for '[WATCHDOG]'):\n"
+                    f"  abilities-off endgame: {wd.get('races_abilities_off', 0)} race(s)  "
+                    f"[tag: [WATCHDOG] abilities-off]\n"
+                    f"  turn aborted (per-turn cap): {wd.get('races_with_turn_abort', 0)} race(s), "
+                    f"{wd.get('turn_abort_events', 0)} turn(s) total  [tag: [WATCHDOG] turn-abort]\n"
+                    f"  hit MAX_TURNS hard cap: {wd.get('races_max_turns_hit', 0)} race(s)  "
+                    f"[tag: [WATCHDOG] max-turns]\n"
+                )
+            else:
+                self.race_results_text.insert(
+                    tk.END, "Watchdog events: none — every race finished normally.\n"
+                )
         self.race_results_text.insert(tk.END, "\n")
         
         # Calculate average points and ability triggers per race.
