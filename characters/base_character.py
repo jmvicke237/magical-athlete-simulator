@@ -301,15 +301,24 @@ class Character:
                 if not game.is_power_suppressed_for(passed_racer):
                     passed_racer.on_being_passed(self, game, play_by_play_lines)
 
-            # Move Suckerfish before checking for on another_player_move to avoid conflicts
+            # Move Suckerfish before checking for on another_player_move to avoid conflicts.
+            # Finished/eliminated racers are off the board — they don't react.
             for p in game.players:
-                if p.piece == "Suckerfish" and p != self:
+                if (p.piece == "Suckerfish" and p != self
+                        and not p.finished and p not in game.eliminated_players):
                     if not game.is_power_suppressed_for(p):
                         p.move_with_another(self, spaces, game, play_by_play_lines)
 
-            # Notify other players about the movement
+            # Notify other players about the movement. Skip finished/eliminated
+            # racers: they're done racing, so reacting (e.g. Romantic moving 2)
+            # would be a phantom no-op move that also pollutes the per-turn
+            # state-loop history and causes false "infinite loop" detections.
+            # (Stepdad's finish-line win bonus is the one effect that must still
+            # fire when finished — it's handled via Stepdad.on_race_end.)
             for other_player in game.players:
-                if other_player != self:
+                if (other_player != self
+                        and not other_player.finished
+                        and other_player not in game.eliminated_players):
                     if not game.is_power_suppressed_for(other_player):
                         other_player.on_another_player_move(self, game, play_by_play_lines)
 
@@ -355,7 +364,7 @@ class Character:
         passed_racers = []
 
         for other in game.players:
-            if other != self and not other.finished:
+            if other != self and not other.finished and other not in game.eliminated_players:
                 # Check if we started behind and ended ahead
                 started_behind = start_position < other.position
                 ended_ahead = end_position > other.position
@@ -403,9 +412,13 @@ class Character:
                 current_space = game.board.spaces[self.position]
                 current_space.on_enter(self, game, play_by_play_lines)
 
-            # Notify other players about the jump (Null suppresses)
+            # Notify other players about the jump (Null suppresses). Skip
+            # finished/eliminated racers — see the on_another_player_move loop
+            # in move() for the rationale (phantom reactions + false loops).
             for other_player in game.players:
-                if other_player != self:
+                if (other_player != self
+                        and not other_player.finished
+                        and other_player not in game.eliminated_players):
                     if not game.is_power_suppressed_for(other_player):
                         other_player.on_another_player_jump(self, game, play_by_play_lines)
 

@@ -38,6 +38,14 @@ class Stepdad(Character):
     def on_another_player_jump(self, jumped_player, game, play_by_play_lines):
         self._maybe_award_stepchild_win(game, play_by_play_lines)
 
+    def on_race_end(self, game, play_by_play_lines):
+        # Backstop: the win bonus must fire even when Stepdad has finished.
+        # base.move/jump no longer notify finished racers (they're off the
+        # board), so if Stepdad finished before its stepchild won, the during-
+        # race on_another_player_move path won't catch it — this end-of-race
+        # check does. The _stepchild_win_awarded flag prevents double-award.
+        self._maybe_award_stepchild_win(game, play_by_play_lines)
+
     def _maybe_award_stepchild_win(self, game, play_by_play_lines):
         if self._stepchild_win_awarded:
             return
