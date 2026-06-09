@@ -8,14 +8,23 @@ class BabaYaga(Character):
         super().__init__(name, piece)
 
     def move(self, game, play_by_play_lines, spaces):
-        # Call super().move *first* to handle basic movement.
+        # Capture position first. "Move 0 isn't a Move" (and a Stickler-blocked
+        # move leaves the position unchanged too) — in either case BabaYaga
+        # never actually stopped on a new space, so it must NOT trip whoever
+        # is sharing its space. Only trip when the move really happened, i.e.
+        # the position changed.
+        pre = self.position
         super().move(game, play_by_play_lines, spaces)
-        # *After* moving, check for tripping.
-        self._check_trip(game, play_by_play_lines)
+        if self.position != pre:
+            self._check_trip(game, play_by_play_lines)
 
     def jump(self, game, position, play_by_play_lines):
+        # Same rule for warps: a no-op jump (to the space we're already on)
+        # isn't a stop, so it doesn't trip. A real warp does count as stopping.
+        pre = self.position
         super().jump(game, position, play_by_play_lines)
-        self._check_trip(game, play_by_play_lines)
+        if self.position != pre:
+            self._check_trip(game, play_by_play_lines)
         
     def on_another_player_move(self, moved_player, game, play_by_play_lines):
         if moved_player != self:
